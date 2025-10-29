@@ -1,0 +1,64 @@
+# /docker-compose.yml
+
+version: '3.8'
+
+services:
+  # Service 1: FastAPI Backend
+  api:
+    build:
+      context: ./apps/api  # Path to the 'api' app
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"        # Expose port 8000 to your host machine
+    environment:
+      # This URL connects to the 'db' service defined below
+      - DATABASE_URL=mysql+pymysql://user:password@db/link_db
+      - SECRET_KEY=your_very_strong_secret_key_here
+    volumes:
+      # Mounts your local 'api' code into the container
+      # This enables hot-reloading for development
+      - ./apps/api:/code
+    depends_on:
+      - db                 # Waits for the 'db' service to be ready
+
+  # Service 2: Next.js Frontend
+  web:
+    build:
+      context: ./apps/web  # Path to the 'web' app
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"        # Expose port 3000 to your host machine
+    environment:
+      # This is the URL your BROWSER will use to find the API
+      # 'localhost' is correct because the browser runs on your host machine
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      # This tells your frontend what the "public" domain is for links
+      - NEXT_PUBLIC_BASE_URL=http://localhost:8000
+    volumes:
+      # Mounts your local 'web' code into the container
+      # This enables hot-reloading for development
+      - ./apps/web:/app
+      - /app/node_modules    # Anonymous volume to "hide" the host's node_modules
+      - /app/.next           # Anonymous volume to "hide" the host's .next
+    depends_on:
+      - api                  # Good practice to show dependency
+
+  # Service 3: MySQL Database
+  db:
+    image: mysql:8.0       # Use the official MySQL 8 image
+    ports:
+      - "3306:3306"        # Expose the MySQL port to your host
+    environment:
+      - MYSQL_ROOT_PASSWORD=rootpassword
+      - MYSQL_DATABASE=link_db
+      - MYSQL_USER=user
+      - MYSQL_PASSWORD=password
+    volumes:
+      # This named volume persists your database data
+      - mysql_data:/var/lib/mysql
+    # If you are on an Apple M1/M2/M3 chip, uncomment the line below
+    # platform: linux/amd64
+
+# Define the named volume for data persistence
+volumes:
+  mysql_data:

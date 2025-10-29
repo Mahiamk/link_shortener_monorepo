@@ -9,6 +9,7 @@ from app.db import schemas, models
 from app.db.database import get_db
 from app.core import security
 from app.core.config import settings
+from app.endpoints.links import get_current_user
 
 router = APIRouter()
 
@@ -62,3 +63,12 @@ async def login_for_access_token(
     
     # 4. Return the token
     return {"access_token": access_token, "token_type": "bearer"}
+  
+
+# --- 3. New /me Endpoint ---  
+@router.get("/me", response_model=schemas.UserOut)
+async def read_users_me(current_user: models.User = Depends(get_current_user)):
+    """
+    Get the profile for the current logged-in user.
+    """
+    return current_user

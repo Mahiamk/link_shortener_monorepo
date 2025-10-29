@@ -10,7 +10,7 @@ from typing import List, Optional
 from app.db.database import get_db, engine, Base
 from app.db.models import User
 from app.core.config import settings
-from app.endpoints import auth, links, redirect
+from app.endpoints import auth, links, admin, analysis, redirect
 
 #create all tables
 Base.metadata.create_all(bind=engine)
@@ -73,4 +73,7 @@ async def read_root():
   
 app.include_router(auth.router, prefix="/auth", tags=["Auth"])
 app.include_router(links.router, prefix="/links", tags=["Links"])
+app.include_router(admin.router, prefix="/admin", tags=["Admin"])
+app.include_router(analysis.router, prefix="/analysis", tags=["Analysis"])
 app.include_router(redirect.router)
+

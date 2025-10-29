@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, computed_field
 from typing import List, Optional
 from datetime import datetime
 
@@ -24,6 +24,8 @@ class UserOut(BaseModel):
     id: int
     email: EmailStr
     created_at: datetime
+    is_active: bool = True
+    is_superuser: bool = False
 
     class Config:
         from_attributes = True
@@ -58,8 +60,27 @@ class Link(LinkBase):
     owner_id: int
     tag: Optional[str] = None
     expires_at: Optional[datetime] = None
-    is_expired: Optional[bool] = None
-    expires_in_days: Optional[int] = None
+    # is_expired: Optional[bool] = None
+    # expires_in_days: Optional[int] = None
+    @computed_field
+    @property
+    def is_expired(self) -> bool:
+        if self.expires_at is None:
+            return False
+        return self.expires_at < datetime.utcnow()
+
+    @computed_field
+    @property
+    def expires_in_days(self) -> Optional[int]:
+        if self.expires_at is None:
+            return None
+        delta = self.expires_at - datetime.utcnow()
+        return max(delta.days, 0) # Return 0 if it's already expired
+
+    # This will nest the User's info inside the Link object
+    owner: UserOut 
+    class Config:
+        from_attributes = True
 
     class Config:
         from_attributes = True  # Pydantic v2
@@ -81,7 +102,35 @@ class LinkOut(BaseModel):
     short_code: str
     owner_id: int
     created_at: datetime
-    clicks: List[ClickOut] = []
+    clicks:int = 0
 
     class Config:
         from_attributes = True
+        
+class AdminStats(BaseModel):
+    """
+    Schema for returning high-level admin statistics.
+    """
+    total_users: int
+    total_links: int
+    total_clicks: int
+
+    class Config:
+        from_attributes = True
+        
+        
+class ClickOverTimeStat(BaseModel):
+    """Schema for representing click counts over a time period."""
+    date: str # Will be YYYY-MM-DD, YYYY-MM-01, or YYYY-01-01
+    count: int
+
+class BreakdownStat(BaseModel):
+    """
+    Schema for representing a breakdown by category (e.g., browser, device).
+    Uses Dict[str, int] for dynamic categories like {"Chrome": 100, "Safari": 50}.
+    """
+    # Pydantic v2 doesn't directly support Dict[str, int] as a root model easily.
+    # Instead, we'll return the dictionary directly from the endpoint
+    # and type hint the response as Dict[str, int].
+    # This class is kept for documentation/reference if needed elsewhere.
+    pass # No fields needed if returning Dict directly

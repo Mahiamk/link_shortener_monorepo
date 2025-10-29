@@ -1,13 +1,64 @@
 from datetime import datetime, timedelta
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload, subqueryload
 from .db import models, schemas
 from .core.security import get_password_hash
 from app.core.config import settings
+from typing import List
+from sqlalchemy import func, cast, Date, Interval, desc
+from sqlalchemy.sql import extract
 
 import secrets
 
+# --- Helper Functions ---
 
+def convert_db_link_to_schema(db_link: models.Link) -> dict:
+    """
+    Safely converts a Link database object into a dictionary
+    that matches the schemas.Link Pydantic model.
+    """
+    if db_link is None:
+        return None
 
+    now = datetime.utcnow()
+    is_expired = db_link.expires_at and db_link.expires_at < now
+    expires_in_days = None
+    if db_link.expires_at:
+        delta = db_link.expires_at - now
+        expires_in_days = max(delta.days, 0)
+
+    # Convert owner to UserOut schema if it exists, otherwise None
+    owner_out = schemas.UserOut.from_orm(db_link.owner) if db_link.owner else None
+
+    return {
+        "id": db_link.id,
+        "original_url": db_link.original_url,
+        "short_code": db_link.short_code,
+        # Safely calculate click count
+        "clicks": len(db_link.clicks) if hasattr(db_link, 'clicks') and db_link.clicks else 0,
+        "created_at": db_link.created_at,
+        "owner_id": db_link.owner_id,
+        "tag": db_link.tag,
+        "expires_at": db_link.expires_at,
+        "is_expired": is_expired,
+        "expires_in_days": expires_in_days,
+        "owner": owner_out # Include the owner details
+    }
+
+def convert_db_links_to_schemas(db_links: List[models.Link]) -> List[dict]:
+    """Applies the conversion to a list of link objects."""
+    return [convert_db_link_to_schema(link) for link in db_links]
+
+def get_mysql_date_trunc(column, interval):
+    """Returns the correct MySQL function for truncating a date."""
+    if interval == 'day':
+        return func.date(column) # Standard function for truncating to day
+    elif interval == 'month':
+        # MySQL equivalent of date_trunc('month'): YYYY-MM-01
+        return func.date_format(column, '%Y-%m-01')
+    elif interval == 'year':
+        # MySQL equivalent of date_trunc('year'): YYYY-01-01
+        return func.date_format(column, '%Y-01-01')
+    return func.date(column) # Default to day
 
 # --- User CRUD (Operations) ---
 
@@ -17,79 +68,243 @@ def get_user_by_email(db: Session, email: str):
 
 def create_user(db: Session, user: schemas.UserCreate):
     """Creates a new user in the database."""
-    # Get the hashed password
-    hashed_password =get_password_hash(user.password)
-    # Determine if the user is a superuser
+    hashed_password = get_password_hash(user.password)
+    superuser_list = []
+    if isinstance(settings.SUPERUSER_EMAILS, str):
+        # Only split if it's actually a string
+        superuser_list = [email.strip() for email in settings.SUPERUSER_EMAILS.split(",")]
+
+    is_superuser = user.email in superuser_list
     
-    # Create the new User model instance
+    
     db_user = models.User(
-        email=user.email, 
+        email=user.email,
         hashed_password=hashed_password,
-        is_superuser=True if user.email in settings.SUPERUSER_EMAILS else False
+        is_superuser=is_superuser
     )
-    
-    # Add to session, commit, refresh, and return
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
     return db_user
 
-# --- Link CRUD (Skeletons) ---
+# --- Link CRUD (Operations) ---
 
 def get_link_by_short_code(db: Session, short_code: str):
     """Fetches a link by its unique short code."""
-    return db.query(models.Link).filter(models.Link.short_code == short_code).first()
+    return (
+        db.query(models.Link)
+        .options(joinedload(models.Link.owner), subqueryload(models.Link.clicks))
+        .filter(models.Link.short_code == short_code)
+        .first()
+    )
 
 def create_db_link(db: Session, original_url: str, user_id: int, tag: str | None = None):
     """Creates a new short link in the database."""
-    short_code = secrets.token_urlsafe(4)
-    expires_at = datetime.utcnow() + timedelta(days=30)  # 🔥 Expiration date = 30 days
-    db_link = models.Link(original_url=original_url, short_code=short_code, owner_id=user_id, tag=tag, expires_at=expires_at)
-    
+    short_code = secrets.token_urlsafe(6)
+    while get_link_by_short_code(db, short_code):
+        short_code = secrets.token_urlsafe(6)
+    expires_at = datetime.utcnow() + timedelta(days=30)
+    db_link = models.Link(
+        original_url=original_url,
+        short_code=short_code,
+        owner_id=user_id,
+        tag=tag,
+        expires_at=expires_at
+    )
     db.add(db_link)
     db.commit()
     db.refresh(db_link)
-    return {
-        "id": db_link.id,
-        "original_url": db_link.original_url,
-        "short_code": db_link.short_code,
-        "owner_id": db_link.owner_id,
-        "created_at": db_link.created_at,
-        "clicks": len(db_link.clicks),  # ✅ number of clicks
-        "tag": db_link.tag,  # ✅ include tag
-        "expires_at": db_link.expires_at  # ✅ include expiration date
-    }
-  
-  
-def get_link_with_click_count(db: Session, link_id: int):
-    link = db.query(models.Link).filter(models.Link.id == link_id).first()
-    if link is None:
-        return None
-    link.clicks = len(link.clicks)  # count the Click objects
-    return link
+    return db_link # Return the DB object
 
-# --- Click CRUD (Skeleton) ---
+def get_links_by_user(db: Session, user_id: int) -> List[models.Link]:
+    """Gets all links for a specific user."""
+    return (
+        db.query(models.Link)
+        .options(joinedload(models.Link.owner), subqueryload(models.Link.clicks))
+        .filter(models.Link.owner_id == user_id)
+        .order_by(models.Link.created_at.desc()) # Added ordering
+        .all()
+    )
 
-def log_click(db, link: models.Link):
-    click = models.Click(link_id=link.id)
-    db.add(click)
-    db.commit()
-    db.refresh(click)
-    return click
+# ✅ --- THIS IS THE MISSING FUNCTION ---
+def get_link_by_id_and_owner(db: Session, link_id: int, user_id: int) -> models.Link | None:
+    """
+    Fetches a single link by its ID, ensuring it belongs to the specified user.
+    Eagerly loads clicks data.
+    """
+    return (
+        db.query(models.Link)
+        .options(subqueryload(models.Link.clicks)) # Eager load clicks specifically for stats
+        .filter(models.Link.id == link_id, models.Link.owner_id == user_id)
+        .first()
+    )
+# ✅ --- END OF MISSING FUNCTION ---
 
-def create_click_log(db: Session, link_id: int, ip_address: str | None = None):
-    """Logs a new click for a specific link."""
-    db_log = models.Click(link_id=link_id, ip_address=ip_address)
+def delete_link(db: Session, link_id: int, user_id: int) -> models.Link | None:
+    """
+    Finds a link by its ID and the owner's ID.
+    Returns the link object if found and owned by the user, otherwise None.
+    Uses the corrected function to ensure clicks are loaded if needed later.
+    """
+    link_to_delete = get_link_by_id_and_owner(db, link_id, user_id)
+    return link_to_delete
+
+
+# --- Click CRUD (Operations) ---
+
+def create_click_log(
+    db: Session,
+    link_id: int,
+    ip_address: str | None = None,
+    country: str | None = None,
+    referrer: str | None = None,
+    browser: str | None = None,
+    device_type: str | None = None
+):
+    """Logs a new click for a specific link with all analytics data."""
+    db_log = models.Click(
+        link_id=link_id,
+        ip_address=ip_address,
+        country=country,
+        referrer=referrer,
+        browser=browser,
+        device_type=device_type
+    )
     db.add(db_log)
     db.commit()
     db.refresh(db_log)
     return db_log
-    # 1. Create a new models.Click object
-    # 2. Add, commit, refresh
+
+# --- Admin CRUD ---
+
+def get_user_count(db: Session) -> int:
+    return db.query(models.User).count()
+
+def get_link_count(db: Session) -> int:
+    return db.query(models.Link).count()
+
+def get_click_count(db: Session) -> int:
+    return db.query(models.Click).count()
+
+def get_all_users(db: Session, skip: int = 0, limit: int = 100) -> List[models.User]:
+    return db.query(models.User).offset(skip).limit(limit).all()
+
+def get_all_links(db: Session, skip: int = 0, limit: int = 100) -> List[models.Link]:
+    """Gets all links (for admin), eager loading relationships."""
+    return (
+        db.query(models.Link)
+        .options(joinedload(models.Link.owner), subqueryload(models.Link.clicks))
+        .order_by(models.Link.created_at.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
     
-def get_links_by_user(db: Session, user_id: int):
-    return db.query(models.Link).filter(models.Link.owner_id == user_id).all()
-# def get_clicks_by_link(db: Session, link_id: int):
-#     return db.query(models.Click).filter(models.Click.link_id == link_id).all()
+def get_user_registration_stats(db: Session, interval: str = 'day'):
+    """
+    Aggregates user registration counts by day, month, or year.
+    'interval' can be 'day', 'month', or 'year'.
+    """
+    date_trunc_map = {
+        'day': func.date(models.User.created_at),
+        'month': func.date_trunc('month', models.User.created_at),
+        'year': func.date_trunc('year', models.User.created_at),
+    }
+
+    if interval not in date_trunc_map:
+        interval = 'day' # Default to day if invalid
+
+    date_column = get_mysql_date_trunc(models.User.created_at, interval).label('date')
+
+    results = (
+        db.query(
+            date_column,
+            func.count(models.User.id).label('count')
+        )
+        .group_by(date_column)
+        .order_by(date_column)
+        .all()
+    )
+
+    # Format results as a list of dictionaries
+    return [{"date": str(row.date), "count": row.count} for row in results]
   
   
+def get_aggregated_clicks_over_time(db: Session, user_id: int, interval: str = 'day'):
+    """
+    Aggregates total clicks per time interval (day, month, year)
+    across all links owned by the specified user.
+    """
+    date_trunc_map = {
+        'day': func.date(models.Click.created_at),
+        'month': func.date_trunc('month', models.Click.created_at),
+        'year': func.date_trunc('year', models.Click.created_at),
+    }
+
+    if interval not in date_trunc_map:
+        interval = 'day' # Default to day if invalid
+
+    date_column = get_mysql_date_trunc(models.Click.created_at, interval).label('date')
+
+    results = (
+        db.query(
+            date_column,
+            func.count(models.Click.id).label('count')
+        )
+        .join(models.Link) # Join Click with Link
+        .filter(models.Link.owner_id == user_id) # Filter by the user owning the link
+        .group_by(date_column)
+        .order_by(date_column) # Order chronologically
+        .all()
+    )
+
+    # Format results
+    return [{"date": str(row.date), "count": row.count} for row in results]
+
+
+def get_aggregated_breakdown(db: Session, user_id: int, group_by_column: str, limit: int = 10):
+    """
+    Generic function to aggregate clicks by a specific column (e.g., browser, device_type, country, referrer)
+    across all links owned by the specified user, returning top N results + 'Other'.
+    """
+    if group_by_column not in ['browser', 'device_type', 'country', 'referrer']:
+        raise ValueError("Invalid column for breakdown")
+
+    column_attribute = getattr(models.Click, group_by_column)
+
+    # Query to get counts per category
+    results = (
+        db.query(
+            column_attribute.label('category'),
+            func.count(models.Click.id).label('count')
+        )
+        .join(models.Link)
+        .filter(models.Link.owner_id == user_id)
+        .group_by(column_attribute)
+        .order_by(desc('count')) # Order by count descending
+        .all()
+    )
+
+    # Process results: Top N + Other
+    top_results = results[:limit]
+    other_count = sum(row.count for row in results[limit:])
+
+    breakdown = {row.category if row.category else 'Unknown': row.count for row in top_results}
+    if other_count > 0:
+        breakdown['Other'] = other_count
+
+    return breakdown
+
+# --- Convenience functions using the generic breakdown ---
+
+def get_aggregated_device_breakdown(db: Session, user_id: int):
+    return get_aggregated_breakdown(db, user_id, 'device_type', limit=5)
+
+def get_aggregated_browser_breakdown(db: Session, user_id: int):
+     return get_aggregated_breakdown(db, user_id, 'browser', limit=5)
+
+def get_aggregated_referrer_breakdown(db: Session, user_id: int):
+    return get_aggregated_breakdown(db, user_id, 'referrer', limit=5)
+
+def get_aggregated_country_breakdown(db: Session, user_id: int):
+    return get_aggregated_breakdown(db, user_id, 'country', limit=5)

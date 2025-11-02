@@ -7,10 +7,11 @@ from datetime import datetime
 from jose import jwt
 from typing import List, Optional
 
+
 from app.db.database import get_db, engine, Base
 from app.db.models import User
 from app.core.config import settings
-from app.endpoints import auth, links, admin, analysis, redirect
+from app.endpoints import auth, links, admin, analysis, redirect, contact
 
 #create all tables
 Base.metadata.create_all(bind=engine)
@@ -70,7 +71,9 @@ async def health_check():
 @app.get("/", tags=["Root"])
 async def read_root():
     return {"message": "Welcome to the LinkShorty API!"}
-  
+ 
+app.include_router(contact.router, prefix="/api", tags=["Contact"]) 
+app.include_router(auth.router, prefix="/api", tags=["Authentication"])  
 app.include_router(auth.router, prefix="/auth", tags=["Auth"])
 app.include_router(links.router, prefix="/links", tags=["Links"])
 app.include_router(admin.router, prefix="/admin", tags=["Admin"])

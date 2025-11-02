@@ -1,7 +1,7 @@
 import { GalleryVerticalEnd } from "lucide-react"
 import Link from "next/link"
-// ✅ FIXED: Changed alias path to relative path
-import { LoginForm } from "../../../components/login-form" // Make sure this path is correct
+import { LoginForm } from "@/components/login-form"
+import Branding from '@/public/images/Branding.png'
 
 export default function LoginPage() {
   return (
@@ -22,15 +22,20 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
-      
+
       {/* --- Right Panel (Image/Branding) --- */}
-      <div className="hidden lg:block bg-gray-100 p-10">
-        <div className="flex h-full w-full items-center justify-center rounded-lg bg-gray-200">
-           <p className="text-gray-500">Branding / Image Area</p>
+      <div className="hidden lg:flex items-center justify-center bg-gray-100">
+        <div className="h-full w-full rounded-lg bg-gray-200 overflow-hidden">
+          <img
+            src={Branding.src}
+            alt="Branding Image"
+            className="w-full h-full object-cover rounded-lg"
+          />
         </div>
       </div>
-      {/* --- Closing div was missing --- */}
-      
+
+
+
     </div>
   )
 }

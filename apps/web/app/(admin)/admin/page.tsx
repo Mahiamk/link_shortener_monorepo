@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { getAdminStats, AdminStats } from '../../../lib/api' // Adjust path
+import { getAdminStats, AdminStats } from '@/lib/api'
 import { BarChart2, Link as LinkIcon, Users } from 'lucide-react'
 import { UserRegistrationChart } from '@/components/admin/UserRegistrationChart'
 

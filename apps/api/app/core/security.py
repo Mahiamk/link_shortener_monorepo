@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from app.core.config import settings
-
+import jwt
 # --- Password Hashing ---
 
 # We use bcrypt as the hashing algorithm
@@ -36,12 +36,41 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
         )
         
     to_encode.update({"exp": expire})
-    
-    encoded_jwt = jwt.encode(
-        to_encode, 
-        settings.SECRET_KEY, 
-        algorithm=settings.ALGORITHM
-    )
+
+    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
   
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
+
+def create_verification_token(email: str) -> str:
+    """
+    Creates a JWT token for email verification, expiring in 1 hour.
+    """
+    expires_delta = timedelta(hours=1)
+    expire = datetime.now(timezone.utc) + expires_delta
+    to_encode = {
+        "exp": expire,
+        "sub": email,
+        "scope": "email_verification" # Add a scope to be extra secure
+    }
+    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    return encoded_jwt
+
+def verify_verification_token(token: str) -> str | None:
+    """
+    Verifies the email verification token.
+    Returns the email if valid, None otherwise.
+    """
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        
+        # Check if the scope is correct
+        if payload.get("scope") != "email_verification":
+            return None
+            
+        email: str = payload.get("sub")
+        if email is None:
+            return None
+        return email
+    except jwt.PyJWTError:
+        return None

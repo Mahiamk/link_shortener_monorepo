@@ -90,7 +90,7 @@ export function DeviceLineChart({
     const safeKey = item.device.replace(/[^a-zA-Z0-9]/g, '_');
     acc[`--color-${safeKey}`] = generateColor(index);
     return acc;
-  }, {} as React.CSSProperties);
+  }, {} as Record<string, string>);
 
   return (
     <Card style={dynamicStyles}>

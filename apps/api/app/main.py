@@ -39,6 +39,7 @@ origins = [
     "http://localhost:3000",
     "http://localhost:8000",
     "https://yourdomain.com",
+    "https://frontend-web-th5x.onrender.com",
 ]
 
 

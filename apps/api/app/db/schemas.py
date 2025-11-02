@@ -77,7 +77,6 @@ class Link(LinkBase):
         delta = self.expires_at - datetime.utcnow()
         return max(delta.days, 0) # Return 0 if it's already expired
 
-    # This will nest the User's info inside the Link object
     owner: UserOut 
     class Config:
         from_attributes = True
@@ -129,8 +128,23 @@ class BreakdownStat(BaseModel):
     Schema for representing a breakdown by category (e.g., browser, device).
     Uses Dict[str, int] for dynamic categories like {"Chrome": 100, "Safari": 50}.
     """
-    # Pydantic v2 doesn't directly support Dict[str, int] as a root model easily.
-    # Instead, we'll return the dictionary directly from the endpoint
-    # and type hint the response as Dict[str, int].
-    # This class is kept for documentation/reference if needed elsewhere.
-    pass # No fields needed if returning Dict directly
+   
+    pass 
+  
+class ContactSubmissionCreate(BaseModel):
+    firstName: str
+    lastName: str
+    email: EmailStr
+    message: str
+
+# Schema for what the API will return
+class ContactSubmission(BaseModel):
+    id: int
+    first_name: str  # We return snake_case
+    last_name: str
+    email: EmailStr
+    message: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True # Pydantic v2

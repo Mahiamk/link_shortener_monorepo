@@ -116,7 +116,7 @@ export const login = async (email: string, password: string) => {
 };
 export const register = async (email: string, password: string) => {
   const response = await fetch(
-    `${API_URL}/auth/register`,
+    `${API_URL}/auth/register/`,
     {
       method: "POST",
       headers: {

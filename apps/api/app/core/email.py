@@ -50,7 +50,7 @@ def send_verification_email(to_email: str, token: str):
     FROM_EMAIL = os.getenv("FROM_EMAIL")
     
     # --- IMPORTANT: Change this to your frontend's URL ---
-    FRONTEND_URL = "http://localhost:3000" 
+    FRONTEND_URL = "https://frontend-web-th5x.onrender.com" 
     
     verification_link = f"{FRONTEND_URL}/verify-email?token={token}"
 

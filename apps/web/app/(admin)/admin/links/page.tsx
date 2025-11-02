@@ -1,8 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { deleteLink, getAllAdminLinks, Link as LinkType } from '@/lib/api' // Adjust path if needed
-import { ExternalLink, Copy, Trash2 } from 'lucide-react'
+import { adminDeleteLink, getAllAdminLinks, Link as LinkType } from '@/lib/api' 
+import { ExternalLink, Copy, Trash2, Loader2, CheckCircle2 } from 'lucide-react'
 import { AnalyticsModal } from '@/components/AnalyticsModal'
 import ChartBarSquareIcon from '@heroicons/react/24/solid/esm/ChartBarSquareIcon'
 import { useRouter } from 'next/dist/client/components/navigation'
@@ -12,12 +12,14 @@ export default function AdminLinksPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [copiedLink, setCopiedLink] = useState<number | null>(null)
+  const [updatingLinkId, setUpdatingLinkId] = useState<number | null>(null)
 
   const router = useRouter();
-  // ✅ --- NEW STATE for the modal ---
+  //  --- STATE for the modal ---
   const [selectedLinkStats, setSelectedLinkStats] = useState<number | null>(null)
+  const [successLinkId, setSuccessLinkId] = useState<number | null>(null);
 
-  // Get base URL from the environment variable
+  //  Base URL from the environment variable
   const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:8000';
 
   useEffect(() => {
@@ -61,15 +63,30 @@ export default function AdminLinksPage() {
       return
     }
     if (!confirm('Are you sure you want to delete this link? This action is permanent.')) return
-
+    const startTime = Date.now();
+    setUpdatingLinkId(id);
+    setSuccessLinkId(null);
     try {
-      // NOTE: For a real admin panel, you'd likely want a dedicated
-      // admin endpoint to delete *any* link, not just your own.
-      // We're re-using the user endpoint for simplicity here.
-      await deleteLink(id, token)
-      setLinks((prev) => prev.filter((l) => l.id !== id))
+      await adminDeleteLink(token, id)
+
+      const ellapsedTime = Date.now() - startTime;
+      const remainingTime = 2000 - ellapsedTime;
+      if (remainingTime > 0) {
+        await new Promise(resolve => setTimeout(resolve, remainingTime));
+      }
+
+      setUpdatingLinkId(null);
+      setSuccessLinkId(id);
+
+      setTimeout(() => {
+        setLinks((prev) => prev.filter((l) => l.id !== id))
+        setSuccessLinkId(null);
+      }, 1500);
     } catch (err: unknown) {
+      console.error("Delete failed:",err);
       alert('Failed to delete link. You may not have permission.')
+    }finally {
+      setUpdatingLinkId(null);
     }
   }
 
@@ -104,6 +121,7 @@ export default function AdminLinksPage() {
               <th scope="col" className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Owner Email</th>
               <th scope="col" className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Clicks</th>
               <th scope="col" className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Date</th>
+              <th scope="col" className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Action</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
@@ -177,24 +195,30 @@ export default function AdminLinksPage() {
                   </td>
                   {/* Actions */}
                   <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
-                    {/* ✅ --- NEW STATS BUTTON --- */}
-                    <button
-                      onClick={() => setSelectedLinkStats(link.id)}
-                      className="text-gray-400 hover:text-indigo-600"
-                      title="View stats"
-                    >
-                      <ChartBarSquareIcon className="h-5 w-5" />
-                      <span className="sr-only">View Stats</span>
-                    </button>
-
-                    <button
-                      onClick={() => handleDelete(link.id)}
-                      className="ml-4 text-red-500 hover:text-red-700"
-                      title="Delete link"
-                    >
-                      <Trash2 className="h-5 w-5" />
-                      <span className="sr-only">Delete</span>
-                    </button>
+                    {/* Show spinner if this link is being deleted */}
+                    {updatingLinkId === link.id ? (
+                      <div className="flex justify-start items-center h-5">
+                        <Loader2 className="h-5 w-5 animate-spin text-gray-400 inline-flex items-center" />
+                      </div>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => setSelectedLinkStats(link.id)}
+                          className="text-gray-400 hover:text-indigo-600 inline-flex items-center" title="View stats"
+                        >
+                          <ChartBarSquareIcon className="h-5 w-5" />
+                          <span className="sr-only">View Stats</span>
+                        </button>
+                        
+                        <button
+                          onClick={() => handleDelete(link.id)}
+                          className="text-red-500 hover:text-red-700 inline-flex items-center" title="Delete link"
+                        >
+                          <Trash2 className="h-5 w-5" />
+                          <span className="sr-only">Delete</span>
+                        </button>
+                      </>
+                    )}
                   </td>
                 </tr>
               ))
@@ -203,8 +227,8 @@ export default function AdminLinksPage() {
         </table>
       </div>
 
-      {/* --- THE MODAL AT THE END --- */}
-      {/* We use selectedLinkStats directly as the linkId prop */}
+      {/* --- THE MODAL --- */}
+      {/* I used selectedLinkStats directly as the linkId prop */}
       <AnalyticsModal
         linkId={selectedLinkStats}
         open={selectedLinkStats !== null}

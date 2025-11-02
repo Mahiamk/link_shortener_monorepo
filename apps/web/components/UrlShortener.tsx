@@ -30,7 +30,7 @@ export function UrlShortener({ onLinkCreated }: UrlShortenerProps) {
   const [isCopied, setIsCopied] = useState(false)
   const [isDownloading, setIsDownloading] = useState(false)
 
-  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:8000';
+  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
   const fullShortUrl = createdLink ? `${BASE_URL}/${createdLink.short_code}` : '';
   // QR Code URL - Higher quality and margin
   const qrCodeUrl = createdLink ? `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(fullShortUrl)}&qzone=1&margin=10` : '';

@@ -15,7 +15,7 @@ interface QrCodeModalProps {
 export function QrCodeModal({ link, open, onClose }: QrCodeModalProps) {
   const [isDownloading, setIsDownloading] = useState(false)
 
-  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:8000';
+  const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
   const fullShortUrl = link ? `${BASE_URL}/${link.short_code}` : '';
   const qrCodeUrl = link ? `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(fullShortUrl)}&qzone=1&margin=10` : '';
 

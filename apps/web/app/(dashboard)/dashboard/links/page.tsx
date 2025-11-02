@@ -6,13 +6,15 @@ import {
   getMyLinks,
   deleteLink,
   Link as LinkType,
-} from '@/lib/api' // Use relative path
+} from '@/lib/api'
 import {
   Copy,
   Trash2,
   ExternalLink,
-  BarChartHorizontal // Use lucide icon for stats
+  BarChartHorizontal,
+  QrCodeIcon
 } from 'lucide-react'
+import { QrCodeModal } from '@/components/QrCodeModal'
 import { AnalyticsModal } from '@/components/AnalyticsModal' // Use relative path
 
 export default function YourLinksPage() {
@@ -22,13 +24,14 @@ export default function YourLinksPage() {
   const [error, setError] = useState('')
   const [copiedLink, setCopiedLink] = useState<number | null>(null)
   const [selectedLinkStats, setSelectedLinkStats] = useState<number | null>(null)
+  const [selectedLinkQr, setSelectedLinkQr] = useState<LinkType | null>(null)
 
   const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:8000';
 
   const fetchLinks = useCallback(async () => {
     const token = localStorage.getItem('token')
     if (!token) {
-       router.push('/auth/login')
+       router.push('/login')
        return
     }
     try {
@@ -40,7 +43,7 @@ export default function YourLinksPage() {
       setError('Failed to load your links.')
       if (String(err).includes('401')) {
          localStorage.removeItem('token'); localStorage.removeItem('userEmail');
-         router.push('/auth/login')
+         router.push('/login')
       }
     } finally {
       setLoading(false)
@@ -64,7 +67,7 @@ export default function YourLinksPage() {
   const handleDelete = async (id: number) => {
     const token = localStorage.getItem('token')
     if (!token) {
-      router.push('/auth/login')
+      router.push('/login')
       return
     }
     if (!window.confirm('Are you sure you want to delete this link?')) return
@@ -75,7 +78,7 @@ export default function YourLinksPage() {
       alert('Failed to delete link.')
        if (String(err).includes('401')) {
          localStorage.removeItem('token'); localStorage.removeItem('userEmail');
-         router.push('/auth/login')
+         router.push('/login')
       }
     }
   }
@@ -85,12 +88,10 @@ export default function YourLinksPage() {
       <h2 className="text-2xl font-semibold text-gray-900 mb-6">Your Links</h2>
       {error && <p className="mb-4 text-red-500">{error}</p>}
 
-      {/* ✅ --- WRAPPER DIV FOR SCROLLING --- */}
       <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
         {loading && links.length === 0 ? (
            <div className="p-10 text-center text-gray-500">Loading links...</div>
         ) : (
-          // ✅ --- Added min-w-[640px] or similar to ensure table tries to be wide ---
           <table className="min-w-full divide-y divide-gray-200 lg:min-w-[768px]">
             <thead className="bg-gray-50">
               <tr>
@@ -124,7 +125,7 @@ export default function YourLinksPage() {
                       </div>
                     </td>
                     {/* Original URL */}
-                    <td className="max-w-xs whitespace-nowrap px-6 py-4 text-sm text-gray-500"> {/* Kept max-w-xs here */}
+                    <td className="max-w-xs whitespace-nowrap px-6 py-4 text-sm text-gray-500">
                       <div className="flex items-center gap-2 truncate">
                          <img src={`https://www.google.com/s2/favicons?domain=${new URL(link.original_url).hostname}&sz=16`} alt="favicon" className="h-4 w-4 flex-shrink-0" onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')} />
                         <span className="truncate">{link.original_url}</span>
@@ -139,6 +140,15 @@ export default function YourLinksPage() {
                     <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{new Date(link.created_at).toLocaleDateString()}</td>
                     {/* Actions Column */}
                     <td className="whitespace-nowrap px-6 py-4 text-left text-sm font-medium space-x-4">
+                      <button
+                        onClick={() => setSelectedLinkQr(link)} // Pass the whole link object
+                        className="text-gray-400 hover:text-indigo-600 inline-flex items-center"
+                        title="View QR Code"
+                      >
+                        <QrCodeIcon className="h-5 w-5" />
+                        <span className="sr-only">View QR Code</span>
+                      </button>
+
                       <button onClick={() => setSelectedLinkStats(link.id)} className="text-gray-400 hover:text-indigo-600 inline-flex items-center" title="View stats">
                         <BarChartHorizontal className="h-5 w-5" />
                         <span className="sr-only">View Stats</span>
@@ -154,12 +164,19 @@ export default function YourLinksPage() {
             </tbody>
           </table>
          )}
-      </div> {/* ✅ --- END OF WRAPPER DIV --- */}
+      </div> 
 
       <AnalyticsModal
         linkId={selectedLinkStats}
         open={selectedLinkStats !== null}
         onClose={() => setSelectedLinkStats(null)}
+      />
+
+      {/* QR Code Modal */}
+      <QrCodeModal
+        link={selectedLinkQr} 
+        open={selectedLinkQr !== null}
+        onClose={() => setSelectedLinkQr(null)}
       />
     </div>
   )

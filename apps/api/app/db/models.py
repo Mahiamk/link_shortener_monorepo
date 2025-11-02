@@ -1,5 +1,5 @@
 from xmlrpc.client import Boolean
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Boolean
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Boolean, Text
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from .database import Base
@@ -13,7 +13,7 @@ class User(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     # One-to-many relationship: one user can have many links
     links = relationship("Link", back_populates="owner", cascade="all, delete-orphan")
-    is_active = Column(Boolean, default=True)  # 1 for active, 0 for inactive
+    is_active = Column(Boolean, default=False)  # 1 for active, 0 for inactive
     is_superuser = Column(Boolean, default=False)  # 1 for admin, 0 for regular user
 
 class Click(Base):
@@ -43,3 +43,14 @@ class Link(Base):
     owner = relationship("User", back_populates="links")
     expires_at = Column(DateTime, nullable=True)  # Optional expiration date
     tag = Column(String(100), nullable=True)  # Optional tag for categorization
+    
+    
+class ContactSubmission(Base):
+    __tablename__ = "contact_submissions"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    first_name = Column(String(100), nullable=False)
+    last_name = Column(String(100), nullable=False)
+    email = Column(String(255), nullable=False, index=True)
+    message = Column(Text, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())

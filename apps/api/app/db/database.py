@@ -7,10 +7,18 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Get DB URL from environment variable, with a default for docker-compose
-DATABASE_URL = os.getenv("DATABASE_URL", "mysql+pymysql://root:admin123@db/link_db")
-print("Connecting to:", DATABASE_URL)
 
-engine = create_engine(DATABASE_URL)
+SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
+
+if not SQLALCHEMY_DATABASE_URL:
+    raise ValueError("DATABASE_URL environment variable is not set")
+  
+if SQLALCHEMY_DATABASE_URL.startswith("mysql://"):
+    SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace(
+        "mysql://", "mysql+pymysql://", 1
+    )
+
+engine = create_engine(SQLALCHEMY_DATABASE_URL)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

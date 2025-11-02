@@ -97,7 +97,7 @@ export function CountryPieChart({
     const safeKey = item.country.replace(/[^a-zA-Z0-9]/g, '_');
     acc[`--color-${safeKey}`] = generateColor(index);
     return acc;
-  }, {} as React.CSSProperties);
+  }, {} as Record<string, string>);
 
 
   return (

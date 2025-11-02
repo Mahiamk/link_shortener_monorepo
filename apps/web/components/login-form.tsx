@@ -81,7 +81,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"form">)
 
     } catch (err: unknown) {
       if (err instanceof Error) {
-        if (err.code === 'auth/popup-closed-by-user') {
+        if ('code' in err && err.code === 'auth/popup-closed-by-user') {
           setError("Sign-in cancelled.");
         } else {
           setError(err.message);

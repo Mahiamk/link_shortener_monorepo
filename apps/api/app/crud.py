@@ -122,11 +122,10 @@ def get_links_by_user(db: Session, user_id: int) -> List[models.Link]:
         db.query(models.Link)
         .options(joinedload(models.Link.owner), subqueryload(models.Link.clicks))
         .filter(models.Link.owner_id == user_id)
-        .order_by(models.Link.created_at.desc()) # Added ordering
+        .order_by(models.Link.created_at.desc())
         .all()
     )
-
-# ✅ --- THIS IS THE MISSING FUNCTION ---
+    
 def get_link_by_id_and_owner(db: Session, link_id: int, user_id: int) -> models.Link | None:
     """
     Fetches a single link by its ID, ensuring it belongs to the specified user.
@@ -138,7 +137,6 @@ def get_link_by_id_and_owner(db: Session, link_id: int, user_id: int) -> models.
         .filter(models.Link.id == link_id, models.Link.owner_id == user_id)
         .first()
     )
-# ✅ --- END OF MISSING FUNCTION ---
 
 def delete_link(db: Session, link_id: int, user_id: int) -> models.Link | None:
     """
@@ -308,3 +306,87 @@ def get_aggregated_referrer_breakdown(db: Session, user_id: int):
 
 def get_aggregated_country_breakdown(db: Session, user_id: int):
     return get_aggregated_breakdown(db, user_id, 'country', limit=5)
+  
+  
+def get_user_by_id(db: Session, user_id: int):
+    """Fetches a single user by their ID."""
+    return db.query(models.User).filter(models.User.id == user_id).first()
+
+def update_user_active_status(db: Session, user_id: int, is_active: bool) -> models.User | None:
+    """Updates the is_active status of a user by ID."""
+    db_user = get_user_by_id(db, user_id)
+    if db_user:
+        db_user.is_active = is_active
+        db.commit()
+        db.refresh(db_user)
+    return db_user
+
+def delete_user_by_id(db: Session, user_id: int) -> bool:
+    """Deletes a user by ID. Returns True if deleted, False otherwise."""
+    db_user = get_user_by_id(db, user_id)
+    if db_user:
+        db.delete(db_user)
+        db.commit()
+        return True
+    return False
+  
+# --- NEW ADMIN FUNCTION ---
+def admin_delete_link(db: Session, link_id: int) -> bool:
+    """
+    Admin action: Deletes a link by its ID, regardless of owner.
+    Returns True if deleted, False if not found.
+    """
+    # Find the link first
+    db_link = db.query(models.Link).filter(models.Link.id == link_id).first()
+    
+    if db_link:
+        # If found, delete it
+        db.delete(db_link)
+        db.commit()
+        return True
+    
+    # If not found, return False
+    return False
+  
+def create_contact_submission(db: Session, submission: schemas.ContactSubmissionCreate) -> models.ContactSubmission:
+    """
+    Creates a new contact form submission in the database.
+    Maps frontend camelCase to backend snake_case.
+    """
+    # Map from the Pydantic schema (camelCase) to the SQLAlchemy model (snake_case)
+    db_submission = models.ContactSubmission(
+        first_name=submission.firstName,
+        last_name=submission.lastName,
+        email=submission.email,
+        message=submission.message
+    )
+    
+    db.add(db_submission)
+    db.commit()
+    db.refresh(db_submission)
+    return db_submission
+  
+def get_submissions(db: Session, skip: int = 0, limit: int = 100) -> List[models.ContactSubmission]:
+    """
+    Retrieves all contact submissions, newest first.
+    """
+    return db.query(models.ContactSubmission).order_by(models.ContactSubmission.created_at.desc()).offset(skip).limit(limit).all()
+
+
+def get_submission_by_id(db: Session, submission_id: int) -> models.ContactSubmission | None:
+    """
+    Retrieves a single contact submission by its ID.
+    """
+    return db.query(models.ContactSubmission).filter(models.ContactSubmission.id == submission_id).first()
+
+
+def delete_submission(db: Session, submission_id: int) -> models.ContactSubmission | None:
+    """
+    Deletes a contact submission by its ID.
+    """
+    db_submission = get_submission_by_id(db, submission_id)
+    if db_submission:
+        db.delete(db_submission)
+        db.commit()
+        return db_submission
+    return None

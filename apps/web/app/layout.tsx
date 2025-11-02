@@ -13,6 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  icons: {
+    icon: "/favicon.ico",
+  },
   title: "LinkShorty",
   description: "A URL shortening service",
 };

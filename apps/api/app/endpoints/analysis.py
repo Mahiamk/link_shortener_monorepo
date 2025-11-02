@@ -1,11 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
-from typing import List, Dict # Import Dict
+from typing import List, Dict
 
 from app import crud
 from app.db import schemas, models
 from app.db.database import get_db
-# Re-use the user authentication dependency from links.py
 from app.endpoints.links import get_current_user
 
 router = APIRouter()

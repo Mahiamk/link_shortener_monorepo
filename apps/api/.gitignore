@@ -1,0 +1,10 @@
+credentials/
+*.json
+
+.env
+web-app-anwar-firebase-adminsdk-fbsvc-f5cb9d56ee.json
+__pycache__/
+*.pyc
+*.pyo
+.env
+

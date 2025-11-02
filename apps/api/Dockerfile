@@ -17,4 +17,4 @@ COPY ./app /code/app
 
 # Command to run your application
 # Use --host 0.0.0.0 to make it accessible outside the container
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+CMD exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT}

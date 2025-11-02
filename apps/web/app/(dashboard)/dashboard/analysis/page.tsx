@@ -10,25 +10,20 @@ import {
   getAggregatedCountries,
   ClickOverTimeStat,
   BreakdownStats
-} from '@/lib/api' // Use relative path
+} from '@/lib/api'
 
-// Import your Chart Components (using relative paths)
 import { VerticalStackedBarChartAnalytics } from '@/components/VerticalStackedBarChartAnalytics'
 import { DeviceLineChart } from '@/components/DeviceLineChart'
 import { CountryPieChart } from '@/components/CountryPieChart'
 import { ReferrerPieChart } from '@/components/ReferrerPieChart'
-// Import the Clicks Over Time Chart (similar structure to UserRegistrationChart)
-// We'll adapt UserRegistrationChart slightly or create a new one
-// For now, let's create a specific one for clicks:
 import { ClicksOverTimeChart } from '@/components/ClicksOverTimeChart'
 
-// Shadcn UI components (assuming paths are correct via components.json)
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
 
 
 export default function AnalysisPage() {
-  const router = useRouter(); // Initialize useRouter
+  const router = useRouter(); 
 
   // State for each data set
   const [clicksData, setClicksData] = useState<ClickOverTimeStat[]>([]);
@@ -48,7 +43,7 @@ export default function AnalysisPage() {
       const token = localStorage.getItem('token');
       if (!token) {
         setError("Not authenticated. Redirecting to login...");
-        setTimeout(() => router.push('/auth/login'), 1500); // Redirect after delay
+        setTimeout(() => router.push('/login'), 1500); 
         setLoading(false);
         return;
       }
@@ -57,7 +52,6 @@ export default function AnalysisPage() {
         setLoading(true);
         setError(null);
 
-        // Fetch all data in parallel
         const [
           clicksRes,
           devicesRes,
@@ -83,7 +77,7 @@ export default function AnalysisPage() {
         setError('Failed to load analysis data. Please try again later.');
         if (String(err).includes('401') || String(err).includes('credentials')) {
             localStorage.removeItem('token'); localStorage.removeItem('userEmail');
-            router.push('/auth/login');
+            router.push('/login');
         }
       } finally {
         setLoading(false);
@@ -91,9 +85,8 @@ export default function AnalysisPage() {
     };
 
     fetchData();
-  }, [timeInterval, router]); // Re-fetch when timeInterval changes or router is available
+  }, [timeInterval, router]);
 
-  // Render Loading / Error states
   if (loading) {
     return (
       <div className="flex items-center justify-center p-10">
@@ -117,12 +110,10 @@ export default function AnalysisPage() {
         <h2 className="text-3xl font-bold tracking-tight text-gray-900">
           Aggregated Link Analysis
         </h2>
-         {/* Interval Selector - Placed near the Clicks Chart */}
       </div>
 
 
       {/* --- Section 1: Clicks Over Time --- */}
-      {/* We need a ClicksOverTimeChart component */}
        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <div className='space-y-1'>
@@ -141,7 +132,6 @@ export default function AnalysisPage() {
              </Select>
           </CardHeader>
           <CardContent>
-            {/* You'll need to create ClicksOverTimeChart based on UserRegistrationChart */}
             <ClicksOverTimeChart chartData={clicksData} timeRange={timeInterval} />
           </CardContent>
        </Card>

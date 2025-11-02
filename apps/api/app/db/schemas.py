@@ -80,9 +80,6 @@ class Link(LinkBase):
     owner: UserOut 
     class Config:
         from_attributes = True
-
-    class Config:
-        from_attributes = True  # Pydantic v2
         
 #------------
 # Click Schemas

@@ -104,7 +104,8 @@ export default function ContactPage() {
 
     try {
       // Send the data to your FastAPI backend
-      const response = await fetch('http://localhost:8000/api/contact-submissions/', {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const response = await fetch(`${apiUrl}/api/contact-submissions/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

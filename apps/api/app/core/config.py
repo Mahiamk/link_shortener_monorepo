@@ -7,12 +7,12 @@ class Settings(BaseSettings):
         env_file_encoding='utf-8'
     )
     
-    # These variables MUST match the names in your .env file
-    SECRET_KEY: str = "your_default_secret_if_env_is_missing"
+    # These variables MUST match the names in .env file
+    SECRET_KEY: str = "xd5Wg+/OBNiA6AA2Vm6QshwFeOUkHI+KQwdB56aZSeP75mzqoLzzuI/FvToqhJE+"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 300
     SUPERUSER_EMAILS: ClassVar[list[str]] = ["admin@gmail.com"]
-
+    GOOGLE_APPLICATION_CREDENTIALS: str = "/Users/anwarmohammedkoji/link-shortener/apps/api/app/credentials/web-app-anwar-firebase-adminsdk-fbsvc-f5cb9d56ee.json"
     
     # DATABASE_URL is already loaded in database.py, but
     # it's good practice to have all env settings here.

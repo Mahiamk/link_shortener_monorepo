@@ -46,7 +46,6 @@ async def handle_redirect(
   
     # Link expiration check
     if link.expires_at and datetime.utcnow() > link.expires_at:
-        # Re-use the nice HTML response from your other endpoint
         return HTMLResponse(
             content=f"""
             <html>
@@ -81,10 +80,3 @@ async def handle_redirect(
     
     return RedirectResponse(url=link.original_url, status_code=307)
   
-# Note: You also had a "/r/{short_code}" endpoint. It was a duplicate
-# of the one above. I have removed it for clarity.
-# The main "/{short_code}" is all you need.
-
-# You can also remove the "delete_expired_links" function
-# as it is not an API endpoint and would be better run as a
-# scheduled background task.

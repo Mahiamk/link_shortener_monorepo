@@ -127,25 +127,12 @@ async def read_users_me(current_user: models.User = Depends(get_current_user)):
 # --- INITIALIZE FIREBASE ADMIN SDK ---
 try:
     if not firebase_admin._apps:
-        BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) 
-        PROJECT_ROOT = os.path.dirname(BASE_DIR) 
-        # Join that with the filename
-        KEY_PATH = os.path.join(PROJECT_ROOT, "web-app-anwar-firebase-adminsdk-fbsvc-f5cb9d56ee.json")
-
-        print(f"Attempting to load key from: {KEY_PATH}")
-        
-        # Load the key file directly by its path
-        cred = credentials.Certificate(KEY_PATH) 
-        
-        firebase_admin.initialize_app(cred, {
-            'projectId': 'web-app-anwar', 
-        })
-        
-        print("Firebase Admin SDK initialized SUCCESSFULLY.")
+        cred = credentials.ApplicationDefault() 
+        firebase_admin.initialize_app(cred)
+        print("Firebase Admin SDK initialized.")
 except Exception as e:
     print(f"Error initializing Firebase Admin SDK: {e}")
-    print("CRITICAL: Make sure 'web-app-anwar-firebase-adminsdk-fbsvc-f5cb9d56ee.json' is in the root of your 'Root Folder' project.")
-
+    print("This is likely a problem with the GOOGLE_APPLICATION_CREDENTIALS secret file.")
 
 class FirebaseToken(BaseModel):
     token: str

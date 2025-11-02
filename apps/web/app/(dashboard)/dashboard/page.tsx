@@ -43,38 +43,32 @@ function StatCard({ title, value, icon }: { title: string, value: string | numbe
 // --- Reusable User Dropdown ---
 // ✅ --- We will add an "Admin" link to this ---
 function UserMenu({ 
-  email, 
-  isSuperuser, // <-- Add this prop
-  onLogout 
 }: { 
   email: string, 
   isSuperuser: boolean, // <-- Add this prop
   onLogout: () => void 
-}) {
-  const [isOpen, setIsOpen] = useState(false)
-  
+}) {  
   return (
     <div className="relative">
-      <button 
+      {/* <button 
         onClick={() => setIsOpen(!isOpen)} 
         className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 text-gray-600 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
       >
         <UserIcon className="h-5 w-5" />
-      </button>
+      </button> */}
       
-      {isOpen && (
+      {/* {isOpen && (
         <div 
           className="absolute right-0 mt-2 w-60 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 z-10"
           onMouseLeave={() => setIsOpen(false)}
         >
           <div className="py-1">
             <div className="px-4 py-2">
-              <p className="text-sm text-gray-500">Signed in as</p>
+              <p className="text-sm text-gray-500">Signed  me in as</p>
               <p className="truncate text-sm font-medium text-gray-900">{email}</p>
             </div>
             <div className="border-t border-gray-100"></div>
             
-            {/* ✅ --- CONDITIONAL ADMIN LINK --- */}
             {isSuperuser && (
               <a
                 href="/admin" // Link to your admin page
@@ -94,7 +88,7 @@ function UserMenu({
             </button>
           </div>
         </div>
-      )}
+      )} */}
     </div>
   )
 }

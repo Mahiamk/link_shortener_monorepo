@@ -1,17 +1,15 @@
 "use client"
 
-import * as React from "react"
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts"
-import { ClickOverTimeStat } from "@/lib/api" // Adjust path if needed
+import { ClickOverTimeStat } from "@/lib/api" 
 
 import {
   ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-} from "@/components/ui/chart" // Adjust path if needed
+} from "@/components/ui/chart" 
 
-// Define the chart configuration specifically for clicks
 const chartConfig = {
   clicks: {
     label: "Clicks",
@@ -27,7 +25,6 @@ interface ClicksOverTimeChartProps {
 
 export function ClicksOverTimeChart({ chartData, timeRange }: ClicksOverTimeChartProps) {
 
-  // Format the date for the X-axis based on the selected interval
   const formatXAxisTick = (value: string) => {
     try {
       const date = new Date(value)
@@ -46,7 +43,6 @@ export function ClicksOverTimeChart({ chartData, timeRange }: ClicksOverTimeChar
     }
   }
 
-  // Format the label in the tooltip
   const formatTooltipLabel = (value: string) => {
      try {
        const date = new Date(value)
@@ -74,7 +70,6 @@ export function ClicksOverTimeChart({ chartData, timeRange }: ClicksOverTimeChar
   }
 
   return (
-    // Note: Removed Card wrapper, assuming it's handled by the parent AnalysisPage
     <ChartContainer
       config={chartConfig}
       className="aspect-auto h-[300px] w-full"
@@ -93,8 +88,8 @@ export function ClicksOverTimeChart({ chartData, timeRange }: ClicksOverTimeChar
           axisLine={false}
           tickMargin={8}
           tickFormatter={formatXAxisTick}
-          interval={0} // Try to show all labels
-          // Consider adding angle={-30} textAnchor="end" height={50} if labels overlap
+          interval={0} 
+          
         />
         <YAxis tickLine={false} axisLine={false} tickMargin={8} />
         <ChartTooltip
@@ -103,18 +98,18 @@ export function ClicksOverTimeChart({ chartData, timeRange }: ClicksOverTimeChar
             <ChartTooltipContent
               labelFormatter={formatTooltipLabel}
               indicator="dot"
-              nameKey="count" // Use the count field
-              label="Clicks"    // Set label for the value
+              nameKey="count" 
+              label="Clicks"   
             />
           }
         />
         <Area
-          dataKey="count" // Use 'count' from the API response
+          dataKey="count" 
           type="natural"
           fill="url(#fillClicks)"
-          stroke="var(--color-clicks)" // Make sure --color-clicks matches chartConfig
-          stackId="a" // Not strictly needed for single area, but good practice
-          name="Clicks" // Name for tooltip/legend
+          stroke="var(--color-clicks)" 
+          stackId="a" 
+          name="Clicks" 
         />
       </AreaChart>
     </ChartContainer>

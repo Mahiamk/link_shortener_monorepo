@@ -1,7 +1,10 @@
-from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi.responses import JSONResponse
+from fastapi import FastAPI, HTTPException, Depends, status, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
+from slowapi.errors import RateLimitExceeded 
+from app.core.limiter import limiter
 import os
 from datetime import datetime
 from jose import jwt
@@ -21,6 +24,15 @@ app = FastAPI(
     description="API for managing link shortener",
     version="1.0.0"
 )
+
+app.state.limiter = limiter
+
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
+    return JSONResponse(
+        status_code=429,
+        content={"detail": f"Rate limit exceeded: {exc.detail}"}
+    )
 
 origins = [
     "http://localhost",

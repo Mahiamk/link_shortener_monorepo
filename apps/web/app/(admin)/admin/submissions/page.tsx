@@ -32,9 +32,10 @@ export default function AdminSubmissionsPage() {
   const fetchSubmissions = async (token: string) => {
     setLoading(true)
     try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
       const res = await fetch(
         // This is the new backend endpoint we will create
-        'http://localhost:8000/api/contact-submissions/',
+        `${apiUrl}/api/contact-submissions/`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -91,9 +92,10 @@ export default function AdminSubmissionsPage() {
     }
 
     try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
       const res = await fetch(
         // This is the new delete endpoint we will create
-        `http://localhost:8000/api/contact-submissions/${id}`,
+        `${apiUrl}/api/contact-submissions/${id}`,
         {
           method: 'DELETE',
           headers: {

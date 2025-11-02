@@ -97,7 +97,7 @@ export function ReferrerPieChart({
     const safeKey = item.referrer.replace(/[^a-zA-Z0-9]/g, '_');
     acc[`--color-${safeKey}`] = generateColor(index);
     return acc;
-  }, {} as React.CSSProperties);
+  }, {} as Record<string, string>);
 
   return (
     <Card className="flex flex-col" style={dynamicStyles}>

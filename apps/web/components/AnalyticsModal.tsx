@@ -3,13 +3,12 @@
 import { useEffect, useState, Fragment } from 'react'
 import { Dialog, DialogPanel, Transition, TransitionChild } from '@headlessui/react'
 import { XMarkIcon, ChartBarIcon } from '@heroicons/react/24/outline'
-import { getLinkStats, LinkStats } from '../lib/api' // Adjust path if needed
+import { getLinkStats, LinkStats } from '../lib/api' 
 
-// ✅ --- Import the specific chart components ---
-import { VerticalStackedBarChartAnalytics } from './VerticalStackedBarChartAnalytics' // For Browsers
-import { DeviceLineChart } from './DeviceLineChart'         // For Devices
-import { CountryPieChart } from './CountryPieChart'         // For Countries
-import { ReferrerPieChart } from './ReferrerPieChart'        // For Referrers
+import { VerticalStackedBarChartAnalytics } from './VerticalStackedBarChartAnalytics'
+import { DeviceLineChart } from './DeviceLineChart'         
+import { CountryPieChart } from './CountryPieChart'         
+import { ReferrerPieChart } from './ReferrerPieChart'       
 
 // --- Main Analytics Modal ---
 export function AnalyticsModal({
@@ -26,7 +25,6 @@ export function AnalyticsModal({
   const [error, setError] = useState('')
 
   useEffect(() => {
-     // ... (Your existing useEffect data fetching logic remains the same) ...
      if (open && linkId !== null) {
       const fetchStats = async () => {
         const token = localStorage.getItem('token')
@@ -45,7 +43,7 @@ export function AnalyticsModal({
     <Transition show={open} as={Fragment}>
       <Dialog className="relative z-40" onClose={onClose}>
         {/* Backdrop */}
-        <TransitionChild as={Fragment} /* ... */ >
+        <TransitionChild as={Fragment} >
           <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" />
         </TransitionChild>
 
@@ -55,12 +53,11 @@ export function AnalyticsModal({
             <DialogPanel className="w-full max-w-5xl rounded-xl bg-white shadow-2xl">
               {/* Header */}
               <div className="flex items-center justify-between rounded-t-xl border-b border-gray-200 bg-gray-50 px-6 py-4">
-                 {/* ... (Header content remains the same) ... */}
                  <div className="flex items-center gap-2">
                   <ChartBarIcon className="h-6 w-6 text-indigo-600" />
                   <h3 className="text-lg font-semibold text-gray-900"> Link Analytics {stats ? `(${stats.short_code})` : ''} </h3>
                 </div>
-                <button onClick={onClose} /* ... */ > <XMarkIcon className="h-6 w-6" /> <span className="sr-only">Close</span> </button>
+                <button onClick={onClose} > <XMarkIcon className="h-6 w-6" /> <span className="sr-only">Close</span> </button>
               </div>
 
               {/* Body */}
@@ -82,14 +79,12 @@ export function AnalyticsModal({
                        {/* Group 1: Browser & Device */}
                        <div className="space-y-6 rounded-lg border border-gray-200 p-4 shadow-sm bg-gray-50/50">
                           <h3 className="text-xl font-semibold text-gray-800 border-b pb-2 mb-4">Device & Platform</h3>
-                           {/* ✅ Keep Vertical Bar for Browsers */}
                            <VerticalStackedBarChartAnalytics
                              title="Browsers"
                              description="Top 5 browsers used"
                              data={stats.by_browser}
                              dataKey="Browser"
                            />
-                            {/* ✅ Use Line Chart for Devices */}
                            <DeviceLineChart
                              title="Device Types"
                              description="Clicks by device category"
@@ -100,13 +95,11 @@ export function AnalyticsModal({
                        {/* Group 2: Location & Source */}
                        <div className="space-y-6 rounded-lg border border-gray-200 p-4 shadow-sm bg-gray-50/50">
                           <h3 className="text-xl font-semibold text-gray-800 border-b pb-2 mb-4">Traffic Source</h3>
-                            {/* ✅ Use Pie Chart with Label List for Countries */}
                            <CountryPieChart
                              title="Countries"
                              description="Top 5 countries by clicks"
                              data={stats.by_country}
                            />
-                            {/* ✅ Use Pie Chart with Labels for Referrers */}
                            <ReferrerPieChart
                              title="Referrers"
                              description="Top 5 referring sources"

@@ -67,10 +67,8 @@ async def get_user_links(
     """
     Gets all links for the currently logged-in user.
     """
-    # 1. Get the raw link objects from crud
     links = crud.get_links_by_user(db=db, user_id=current_user.id)
     
-    # 2. ✅ FIX: Convert them to the correct schema using the helper
     return crud.convert_db_links_to_schemas(links)
 
 @router.post("/", response_model=schemas.Link)
@@ -82,14 +80,12 @@ async def create_link(
     """
     Creates a new short link for the currently logged-in user.
     """
-    # 1. Create the raw link object
     new_link = crud.create_db_link(
         db=db,
         original_url=link.original_url,
         user_id=current_user.id,
         tag=link.tag, 
     )
-    # 2. ✅ FIX: Convert it to the correct schema for the response
     return crud.convert_db_link_to_schema(new_link)
 
 @router.delete("/{link_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -111,7 +107,7 @@ async def delete_link(
     
     db.delete(link_to_delete)
     db.commit()
-    return # No content
+    return 
 
 @router.put("/{link_id}/extend", response_model=schemas.Link)
 def extend_link_expiration(
@@ -134,7 +130,6 @@ def extend_link_expiration(
     db.commit()
     db.refresh(link)
     
-    # ✅ FIX: Convert the link object for the response
     return crud.convert_db_link_to_schema(link)
   
 @router.get("/expired", response_model=List[schemas.Link])
@@ -151,7 +146,6 @@ def get_expired_links(
     now = datetime.utcnow()
     expired_links = db.query(models.Link).filter(models.Link.expires_at < now).all()
     
-    # ✅ FIX: Convert all link objects for the response
     return crud.convert_db_links_to_schemas(expired_links)
 
 @router.get("/active", response_model=List[schemas.Link])
@@ -169,7 +163,6 @@ def get_active_links(
         .filter((models.Link.expires_at == None) | (models.Link.expires_at > current_time))
         .all()
     )
-    # ✅ FIX: Convert all link objects for the response
     return crud.convert_db_links_to_schemas(links)
 
 @router.get("/{link_id}/stats")
@@ -188,7 +181,6 @@ def get_link_stats(
     clicks = link.clicks
     total_clicks = len(clicks)
 
-    # Helper function to group clicks by attribute
     def group_by(clicks_list, attr):
         result = {}
         for c in clicks_list:

@@ -14,7 +14,7 @@ import {
   UserCircleIcon,
   ShieldCheckIcon,
 } from '@heroicons/react/24/outline'
-import { getUserProfile, User } from '../../lib/api' // Use relative path
+import { getUserProfile, User } from '../../lib/api'
 
 const navigation = [
   { name: 'Overview', href: '/dashboard', icon: HomeIcon },

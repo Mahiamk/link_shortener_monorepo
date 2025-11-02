@@ -31,9 +31,9 @@ services:
     environment:
       # This is the URL your BROWSER will use to find the API
       # 'localhost' is correct because the browser runs on your host machine
-      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NEXT_PUBLIC_API_URL=https://backend-api-8zck.onrender.com
       # This tells your frontend what the "public" domain is for links
-      - NEXT_PUBLIC_BASE_URL=http://localhost:8000
+      - NEXT_PUBLIC_BASE_URL=https://backend-api-8zck.onrender.com
     volumes:
       # Mounts your local 'web' code into the container
       # This enables hot-reloading for development

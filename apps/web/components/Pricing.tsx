@@ -69,9 +69,14 @@ export function Pricing() {
             Start Free, Scale Smart.
           </p>
         </div>
-        <p className="mx-auto mt-6 max-w-2xl text-center text-lg leading-8 text-gray-600">
-          We offer a powerful **Free Starter** plan with no time limits. When your needs grow, our advanced tiers are ready for you.
+        <p className="mx-auto mt-6 max-w-2xl text-center text-lg leading-8 text-gray-900">
+          We offer a powerful{" "}
+          <span className="font-semibold px-1 py-1 rounded-xl bg-gradient-to-r from-pink-400 via-gray-300 to-blue-400 text-gray-800 shadow-md shadow-pink-300/40 backdrop-blur">
+            Free Starter
+          </span>{" "}
+          plan with no time limits. When your needs grow, our advanced tiers are ready for you.
         </p>
+
 
         <div className="isolate mx-auto mt-16 grid max-w-md grid-cols-1 gap-y-8 sm:mt-20 lg:max-w-4xl lg:grid-cols-3 lg:gap-x-8">
           {tiers.map((tier) => (

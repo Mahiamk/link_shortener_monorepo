@@ -143,7 +143,7 @@ class Token(BaseModel):
 
 
 
-@router.post("/auth/google/", response_model=Token) 
+@router.post("/google/", response_model=Token) 
 async def login_or_register_with_google(
     token: FirebaseToken,
     background_tasks: BackgroundTasks,

@@ -62,17 +62,12 @@ async def handle_redirect(
     # --- Log Click Analytics ---
     user_agent = request.headers.get("user-agent")
     referrer = request.headers.get("referer")
-    ip = request.client.host # Note: This is often '127.0.0.1' in Docker.
-                             # For real IP, you need a reverse proxy (e.g., Nginx)
-                             # and to check 'x-forwarded-for' header.
-                             # For now, this is fine for testing.
-    
-    # Use the CRUD function to log the click
+    ip = request.client.host 
     crud.create_click_log(
         db=db,
         link_id=link.id,
         ip_address=ip,
-        country=ip, # Placeholder. Use a service like IP2Location to map IP to country
+        country=ip, 
         referrer=referrer,
         browser=parse_browser(user_agent),
         device_type=parse_device_type(user_agent),

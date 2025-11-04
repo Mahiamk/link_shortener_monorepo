@@ -21,7 +21,7 @@ def get_user_clicks_over_time(
     stats = crud.get_aggregated_clicks_over_time(db, user_id=current_user.id, interval=interval)
     return stats
 
-# Note: We use Dict[str, int] as the response_model because BreakdownStat is empty
+# Note: I use Dict[str, int] as the response_model because BreakdownStat is empty
 @router.get("/device-breakdown", response_model=Dict[str, int])
 def get_user_device_breakdown(
     db: Session = Depends(get_db),

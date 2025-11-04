@@ -292,7 +292,7 @@ Set Admin: Connect to your live Railway database and run the UPDATE users... com
 📂 Project Structure
 
 This project uses a monorepo structure to keep the frontend and backend codebases separate but in one repository.
-
+```
 /link-shortener
 │
 ├── .github/              # (Optional: CI/CD workflows)
@@ -323,7 +323,7 @@ This project uses a monorepo structure to keep the frontend and backend codebase
 ├── docker-compose.yml    # For local development
 └── README.md             # You are here!
 
-
+```
 📜 License
 
 This project is licensed under the MIT License. See the LICENSE file for details.

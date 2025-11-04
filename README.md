@@ -6,9 +6,14 @@ This repository is a comprehensive example of a production-ready web application
 
 ## Screenshots
 
+# Main Admin Dashboard
 ![Main dashboard — LinkShorty](./admin.png)
+# Main User Dashboard
 ![User dashboard — LinkShorty](./user.png)
+# Main landingpage
 ![Main landingpage — LinkShorty](./home.png)
+
+# Sample on how to shorten link
 ![Sample — LinkShorty](./sample.png)
 
 

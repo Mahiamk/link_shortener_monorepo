@@ -107,16 +107,10 @@ def delete_user(
     user_to_delete = crud.get_user_by_id(db, user_id) 
     if not user_to_delete:
          raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-
-    # The deletion itself happens via cascade rule defined in models.py
-    # If cascade is set up correctly ('all, delete-orphan' on User.links),
-    # deleting the user will also delete their links and clicks.
     deleted = crud.delete_user_by_id(db, user_id=user_id)
     if not deleted:
-         # This case should ideally not happen if the previous check passed, but included for safety
          raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found during deletion attempt")
 
-    # No content is returned on successful delete (204)
     return None
   
 @router.delete("/links/{link_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(get_current_superuser)])
@@ -127,7 +121,6 @@ def admin_delete_link_endpoint(
     """
     Instantly deletes a link by its ID. (Admin Only)
     """
-    # Call the new admin-specific CRUD function
     success = crud.admin_delete_link(db, link_id=link_id)
     
     if not success:

@@ -84,8 +84,7 @@ async def read_root():
     return {"message": "Welcome to the LinkShorty API!"}
  
 app.include_router(contact.router, prefix="/api", tags=["Contact"]) 
-app.include_router(auth.router, prefix="/api", tags=["Authentication"])  
-app.include_router(auth.router, prefix="/auth", tags=["Auth"])
+app.include_router(auth.router, prefix="/auth", tags=["Authentication"])  
 app.include_router(links.router, prefix="/links", tags=["Links"])
 app.include_router(admin.router, prefix="/admin", tags=["Admin"])
 app.include_router(analysis.router, prefix="/analysis", tags=["Analysis"])

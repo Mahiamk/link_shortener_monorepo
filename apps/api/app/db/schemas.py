@@ -60,8 +60,6 @@ class Link(LinkBase):
     owner_id: int
     tag: Optional[str] = None
     expires_at: Optional[datetime] = None
-    # is_expired: Optional[bool] = None
-    # expires_in_days: Optional[int] = None
     @computed_field
     @property
     def is_expired(self) -> bool:

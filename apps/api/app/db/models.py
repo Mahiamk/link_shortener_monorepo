@@ -41,8 +41,8 @@ class Link(Base):
     clicks = relationship("Click", back_populates="link", cascade="all, delete-orphan")
     # Back relationship
     owner = relationship("User", back_populates="links")
-    expires_at = Column(DateTime, nullable=True)  # Optional expiration date
-    tag = Column(String(100), nullable=True)  # Optional tag for categorization
+    expires_at = Column(DateTime, nullable=True)  
+    tag = Column(String(100), nullable=True)  
     
     
 class ContactSubmission(Base):

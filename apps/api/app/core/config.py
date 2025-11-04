@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     )
     
     # These variables MUST match the names in .env file
-    
+    SECRET_KEY: str = "xd5Wg+/OBNiA6AA2Vm6QshwFeOUkHI+KQwdB56aZSeP75mzqoLzzuI/FvToqhJE+"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 300
     SUPERUSER_EMAILS: ClassVar[list[str]] = ["admin@gmail.com"]

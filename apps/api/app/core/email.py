@@ -1,5 +1,3 @@
-# In: app/core/email.py
-
 import os
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
@@ -11,14 +9,12 @@ def send_welcome_email(to_email: str, name: str):
     SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
     FROM_EMAIL = os.getenv("FROM_EMAIL")
 
-    # If you haven't set up SendGrid, just print to the console
     if not SENDGRID_API_KEY or not FROM_EMAIL:
         print("--- SENDGRID NOT CONFIGURED ---")
         print(f"Email: Welcome email would be sent to {to_email} for user {name}")
         print("-------------------------------")
         return
 
-    # This is the email template
     html_content = f"""
     <div style="font-family: Arial, sans-serif; line-height: 1.6;">
         <h2 style="color: #333;">Welcome to LinkShorty, {name}!</h2>
@@ -48,11 +44,10 @@ def send_verification_email(to_email: str, token: str):
     """
     SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
     FROM_EMAIL = os.getenv("FROM_EMAIL")
-    
-    # --- IMPORTANT: Change this to your frontend's URL ---
-    FRONTEND_URL = "https://frontend-web-th5x.onrender.com" 
-    
-    verification_link = f"{FRONTEND_URL}/verify-email?token={token}"
+
+    NEXT_PUBLIC_BASE_URL = os.getenv("NEXT_PUBLIC_BASE_URL")
+
+    verification_link = f"{NEXT_PUBLIC_BASE_URL}/verify-email?token={token}"
 
     if not SENDGRID_API_KEY or not FROM_EMAIL:
         print("--- SENDGRID NOT CONFIGURED ---")

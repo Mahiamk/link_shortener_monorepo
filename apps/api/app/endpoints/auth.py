@@ -154,7 +154,6 @@ async def login_or_register_with_google(
     finds or creates a user, and returns your app's access token.
     """
     try:
-        # A. Verify it's a real Google login
         decoded_token = auth.verify_id_token(token.token)
         email = decoded_token.get("email")
         name = decoded_token.get("name", "New User")
@@ -164,34 +163,28 @@ async def login_or_register_with_google(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Email not found in Firebase token.",
             )
-        # B. Find or create the user in database
         user = get_user_by_email(db, email=email)
 
         if not user:
-            # User doesn't exist (Register)
             print(f"User not found. Creating new user for: {email}")
-            random_password = str(uuid.uuid4())  # Generate a random password
+            random_password = str(uuid.uuid4())  
           
             user_to_create = UserCreate(
                 email=email,
                 password=random_password)
             user = create_user(db, user=user_to_create) 
-            # Send welcome email in the background
             background_tasks.add_task(
                 send_welcome_email, 
                 to_email=email, 
-                name=email.split("@")[0]  # Use part of email as name
+                name=email.split("@")[0]  
             )
         else:
-            # User exists (Login)
             print(f"User found: {email}")
 
-        # C. Create your app's access token
         app_access_token = create_access_token(
             data={"sub": user.email, "id": user.id} 
         )
 
-        # D. Send your token back!
         return {"access_token": app_access_token, "token_type": "bearer"}
 
     except auth.ExpiredIdTokenError:

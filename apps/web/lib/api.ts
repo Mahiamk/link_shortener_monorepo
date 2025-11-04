@@ -276,7 +276,7 @@ export const adminDeleteLink = (
 };
 
 export async function loginOrRegisterWithGoogle(firebaseToken: string) {
-  const response = await fetch(`${API_URL}/api/auth/google/`, {
+  const response = await fetch(`${API_URL}/auth/google/`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

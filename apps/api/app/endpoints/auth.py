@@ -1,4 +1,3 @@
-import json
 import uuid
 import os
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
@@ -126,12 +125,6 @@ async def read_users_me(current_user: models.User = Depends(get_current_user)):
     return current_user
 
 # --- INITIALIZE FIREBASE ADMIN SDK ---
-cred_info = json.loads(os.getenv("GOOGLE_APPLICATION_CREDENTIALS"))
-cred = credentials.Certificate(cred_info)
-# Explicitly pass the project_id
-firebase_admin.initialize_app(cred, {
-    'projectId': cred_info.get('project_id')
-})
 try:
     if not firebase_admin._apps:
         cred = credentials.ApplicationDefault() 

@@ -38,6 +38,7 @@ origins = [
     "http://localhost",
     "http://localhost:3000",
     "https://frontend-web-th5x.onrender.com",
+    "https://link-ten-liard.vercel.app"
 ]
 
 

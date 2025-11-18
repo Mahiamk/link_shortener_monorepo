@@ -52,7 +52,7 @@ async def register_user(user: schemas.UserCreate, background_tasks: BackgroundTa
     
     return db_user
   
-@router.get("/verify-email/", status_code=status.HTTP_200_OK)
+@router.get("/verify-email", status_code=status.HTTP_200_OK)
 def verify_email(token: str, db: Session = Depends(get_db)):
     """
     Verify a user's email address from the link they click.

@@ -47,7 +47,7 @@ def send_verification_email(to_email: str, token: str):
 
     NEXT_PUBLIC_BASE_URL = os.getenv("NEXT_PUBLIC_BASE_URL")
 
-    verification_link = f"{NEXT_PUBLIC_BASE_URL}/verify-email?token={token}"
+    verification_link = f"{NEXT_PUBLIC_BASE_URL}/auth/verify-email?token={token}"
 
     if not SENDGRID_API_KEY or not FROM_EMAIL:
         print("--- SENDGRID NOT CONFIGURED ---")

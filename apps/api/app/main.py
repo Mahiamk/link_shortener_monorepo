@@ -37,8 +37,7 @@ async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
 origins = [
     "http://localhost",
     "http://localhost:3000",
-    "https://frontend-web-th5x.onrender.com",
-    "https://link-ten-liard.vercel.app"
+    "https://linkyshorty.vercel.app"
 ]
 
 

@@ -31,7 +31,7 @@ function VerificationComponent() {
         // Make sure this URL matches your FastAPI server and endpoint
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
         const response = await fetch(
-          `${apiUrl}/api/verify-email/?token=${token}`,
+          `${apiUrl}/api/verify-email?token=${token}`,
           {
             method: 'GET',
           },

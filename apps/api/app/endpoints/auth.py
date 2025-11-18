@@ -1,3 +1,4 @@
+import json
 import uuid
 import os
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
@@ -125,14 +126,25 @@ async def read_users_me(current_user: models.User = Depends(get_current_user)):
     return current_user
 
 # --- INITIALIZE FIREBASE ADMIN SDK ---
-try:
-    if not firebase_admin._apps:
-        cred = credentials.ApplicationDefault() 
-        firebase_admin.initialize_app(cred)
-        print("Firebase Admin SDK initialized.")
-except Exception as e:
-    print(f"Error initializing Firebase Admin SDK: {e}")
-    print("This is likely a problem with the GOOGLE_APPLICATION_CREDENTIALS secret file.")
+
+if not firebase_admin._apps:
+    # 1. Get the JSON string from the environment variable
+    firebase_json = os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON")
+
+    if firebase_json:
+        try:
+            # 2. Parse the string into a Python dictionary
+            service_account_info = json.loads(firebase_json)
+            
+            # 3. Create credentials from the dictionary
+            cred = credentials.Certificate(service_account_info)
+            firebase_admin.initialize_app(cred)
+            print("Firebase Admin SDK initialized successfully from Environment Variable.")
+            
+        except Exception as e:
+            print(f"Error initializing Firebase: {e}")
+    else:
+        print("WARNING: 'FIREBASE_SERVICE_ACCOUNT_JSON' environment variable not found.")
 
 class FirebaseToken(BaseModel):
     token: str

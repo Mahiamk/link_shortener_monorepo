@@ -5,33 +5,30 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { CheckCircle, XCircle, Loader } from 'lucide-react'
 
-// This is the component that does all the work
 function VerificationComponent() {
-  const [status, setStatus] = useState<'verifying' | 'success' | 'error'>(
-    'verifying',
-  )
+  const [status, setStatus] = useState('verifying')
   const [message, setMessage] = useState('Verifying your email...')
 
-  // This hook reads the ?token=... part of the URL
   const searchParams = useSearchParams()
   const token = searchParams.get('token')
 
   useEffect(() => {
-    // This runs once when the page loads
     if (!token) {
       setStatus('error')
       setMessage('No verification token found. Please check your link.')
       return
     }
 
-    // This is the function that calls your backend
     const verifyToken = async () => {
       try {
-        // --- IMPORTANT ---
-        // Make sure this URL matches your FastAPI server and endpoint
+        // Use the environment variable for the backend URL
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+        
+        // --- THE FIX IS HERE ---
+        // 1. Changed '/api' to '/auth' (because your router is mounted at /auth)
+        // 2. Removed the trailing slash '/' before the '?' (to match standard API paths)
         const response = await fetch(
-          `${apiUrl}/api/verify-email?token=${token}`,
+          `${apiUrl}/auth/verify-email?token=${token}`,
           {
             method: 'GET',
           },
@@ -40,14 +37,12 @@ function VerificationComponent() {
         const data = await response.json()
 
         if (!response.ok) {
-          // Handle errors from the backend (like "Token expired")
           throw new Error(data.detail || 'Verification failed')
         }
 
-        // --- SUCCESS! ---
         setStatus('success')
         setMessage(data.message || 'Email verified successfully!')
-      } catch (err: unknown) {
+      } catch (err) {
         setStatus('error')
         if (err instanceof Error) {
           setMessage(err.message)
@@ -58,9 +53,8 @@ function VerificationComponent() {
     }
 
     verifyToken()
-  }, [token]) // Re-run if the token ever changes
+  }, [token])
 
-  // This renders the loading/success/error message
   return (
     <div className="flex flex-col items-center justify-center rounded-lg bg-white p-10 shadow-lg">
       {status === 'verifying' && (
@@ -107,11 +101,8 @@ function VerificationComponent() {
   )
 }
 
-// This is the main page component that Next.js will render
 export default function VerifyEmailPage() {
   return (
-    // We wrap the component in <Suspense>
-    // This is required by Next.js when using useSearchParams
     <div className="flex min-h-screen items-center justify-center bg-gray-50">
       <Suspense fallback={<Loader className="h-12 w-12 animate-spin" />}>
         <VerificationComponent />

@@ -126,7 +126,6 @@ async def read_users_me(current_user: models.User = Depends(get_current_user)):
     return current_user
 
 # --- INITIALIZE FIREBASE ADMIN SDK ---
-
 if not firebase_admin._apps:
     # 1. Get the JSON string from the environment variable
     firebase_json = os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON")

@@ -134,15 +134,25 @@ def create_db_link(db: Session, original_url: str, user_id: int, tag: str | None
     """Creates a new short link in the database."""
     # Generate unique short code with safety limit to prevent infinite loops
     max_attempts = 10
+    code_length = 6
+    
     for attempt in range(max_attempts):
-        short_code = secrets.token_urlsafe(6)
+        short_code = secrets.token_urlsafe(code_length)
         # Efficient check: only query for short_code column
         exists = db.query(models.Link.id).filter(models.Link.short_code == short_code).first()
         if not exists:
             break
+        # If collision at max attempts, increase code length for next try
+        if attempt == max_attempts - 1:
+            code_length = 8
     else:
-        # If we couldn't find a unique code after max_attempts, use a longer code
-        short_code = secrets.token_urlsafe(8)
+        # Final fallback: generate longer code until unique (very unlikely to loop)
+        while True:
+            short_code = secrets.token_urlsafe(code_length)
+            exists = db.query(models.Link.id).filter(models.Link.short_code == short_code).first()
+            if not exists:
+                break
+            code_length += 1  # Progressively increase length if needed
     
     expires_at = datetime.utcnow() + timedelta(days=30)
     db_link = models.Link(

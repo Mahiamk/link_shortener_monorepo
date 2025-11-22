@@ -139,8 +139,10 @@ def create_db_link(db: Session, original_url: str, user_id: int, tag: str | None
     
     for attempt in range(max_attempts):
         short_code = secrets.token_urlsafe(code_length)
-        # Efficient check: only query for short_code column
-        exists = db.query(models.Link.id).filter(models.Link.short_code == short_code).first()
+        # Efficient existence check: only checks if record exists
+        exists = db.query(
+            db.query(models.Link).filter(models.Link.short_code == short_code).exists()
+        ).scalar()
         if not exists:
             break
         # If collision at max attempts, increase code length for next try
@@ -152,7 +154,9 @@ def create_db_link(db: Session, original_url: str, user_id: int, tag: str | None
         max_fallback_attempts = 20
         while fallback_attempts < max_fallback_attempts:
             short_code = secrets.token_urlsafe(code_length)
-            exists = db.query(models.Link.id).filter(models.Link.short_code == short_code).first()
+            exists = db.query(
+                db.query(models.Link).filter(models.Link.short_code == short_code).exists()
+            ).scalar()
             if not exists:
                 break
             fallback_attempts += 1

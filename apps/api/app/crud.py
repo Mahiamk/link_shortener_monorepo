@@ -11,10 +11,11 @@ import secrets
 
 # --- Helper Functions ---
 
-def convert_db_link_to_schema(db_link: models.Link) -> dict:
+def convert_db_link_to_schema(db_link: models.Link, db: Session = None) -> dict:
     """
     Safely converts a Link database object into a dictionary
     that matches the schemas.Link Pydantic model.
+    Optionally accepts a db session for efficient click counting.
     """
     if db_link is None:
         return None
@@ -29,12 +30,18 @@ def convert_db_link_to_schema(db_link: models.Link) -> dict:
     # Convert owner to UserOut schema if it exists, otherwise None
     owner_out = schemas.UserOut.from_orm(db_link.owner) if db_link.owner else None
 
+    # Efficient click counting: use SQL COUNT if db session available, otherwise fall back
+    if db is not None:
+        click_count = db.query(func.count(models.Click.id)).filter(models.Click.link_id == db_link.id).scalar()
+    else:
+        # Fallback: check if clicks are already loaded
+        click_count = len(db_link.clicks) if hasattr(db_link, 'clicks') and db_link.clicks else 0
+
     return {
         "id": db_link.id,
         "original_url": db_link.original_url,
         "short_code": db_link.short_code,
-        # Safely calculate click count
-        "clicks": len(db_link.clicks) if hasattr(db_link, 'clicks') and db_link.clicks else 0,
+        "clicks": click_count,
         "created_at": db_link.created_at,
         "owner_id": db_link.owner_id,
         "tag": db_link.tag,
@@ -44,9 +51,35 @@ def convert_db_link_to_schema(db_link: models.Link) -> dict:
         "owner": owner_out # Include the owner details
     }
 
-def convert_db_links_to_schemas(db_links: List[models.Link]) -> List[dict]:
-    """Applies the conversion to a list of link objects."""
-    return [convert_db_link_to_schema(link) for link in db_links]
+def convert_db_links_to_schemas(db_links: List[models.Link], db: Session = None) -> List[dict]:
+    """
+    Applies the conversion to a list of link objects.
+    For efficiency with multiple links, use a single query to get all click counts.
+    """
+    if not db_links:
+        return []
+    
+    if db is not None:
+        # Efficient batch query: get click counts for all links at once
+        link_ids = [link.id for link in db_links]
+        click_counts = (
+            db.query(models.Click.link_id, func.count(models.Click.id).label('count'))
+            .filter(models.Click.link_id.in_(link_ids))
+            .group_by(models.Click.link_id)
+            .all()
+        )
+        click_count_map = {link_id: count for link_id, count in click_counts}
+        
+        # Convert each link, using the precomputed click counts
+        result = []
+        for link in db_links:
+            link_dict = convert_db_link_to_schema(link, db=None)  # Don't query again
+            link_dict['clicks'] = click_count_map.get(link.id, 0)
+            result.append(link_dict)
+        return result
+    else:
+        # Fallback to individual conversion
+        return [convert_db_link_to_schema(link, db=None) for link in db_links]
 
 def get_mysql_date_trunc(column, interval):
     """Returns the correct MySQL function for truncating a date."""
@@ -93,16 +126,24 @@ def get_link_by_short_code(db: Session, short_code: str):
     """Fetches a link by its unique short code."""
     return (
         db.query(models.Link)
-        .options(joinedload(models.Link.owner), subqueryload(models.Link.clicks))
         .filter(models.Link.short_code == short_code)
         .first()
     )
 
 def create_db_link(db: Session, original_url: str, user_id: int, tag: str | None = None):
     """Creates a new short link in the database."""
-    short_code = secrets.token_urlsafe(6)
-    while get_link_by_short_code(db, short_code):
+    # Generate unique short code with safety limit to prevent infinite loops
+    max_attempts = 10
+    for attempt in range(max_attempts):
         short_code = secrets.token_urlsafe(6)
+        # Efficient check: only query for short_code column
+        exists = db.query(models.Link.id).filter(models.Link.short_code == short_code).first()
+        if not exists:
+            break
+    else:
+        # If we couldn't find a unique code after max_attempts, use a longer code
+        short_code = secrets.token_urlsafe(8)
+    
     expires_at = datetime.utcnow() + timedelta(days=30)
     db_link = models.Link(
         original_url=original_url,
@@ -120,7 +161,7 @@ def get_links_by_user(db: Session, user_id: int) -> List[models.Link]:
     """Gets all links for a specific user."""
     return (
         db.query(models.Link)
-        .options(joinedload(models.Link.owner), subqueryload(models.Link.clicks))
+        .options(joinedload(models.Link.owner))  # Keep owner for response schema
         .filter(models.Link.owner_id == user_id)
         .order_by(models.Link.created_at.desc())
         .all()
@@ -188,10 +229,10 @@ def get_all_users(db: Session, skip: int = 0, limit: int = 100) -> List[models.U
     return db.query(models.User).offset(skip).limit(limit).all()
 
 def get_all_links(db: Session, skip: int = 0, limit: int = 100) -> List[models.Link]:
-    """Gets all links (for admin), eager loading relationships."""
+    """Gets all links (for admin)."""
     return (
         db.query(models.Link)
-        .options(joinedload(models.Link.owner), subqueryload(models.Link.clicks))
+        .options(joinedload(models.Link.owner))  # Keep owner for response schema
         .order_by(models.Link.created_at.desc())
         .offset(skip)
         .limit(limit)

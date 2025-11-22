@@ -1,6 +1,7 @@
 import secrets
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from typing import List, Optional
 from jose import JWTError, jwt
 from pydantic import BaseModel
@@ -69,7 +70,7 @@ async def get_user_links(
     """
     links = crud.get_links_by_user(db=db, user_id=current_user.id)
     
-    return crud.convert_db_links_to_schemas(links)
+    return crud.convert_db_links_to_schemas(links, db=db)
 
 @router.post("/", response_model=schemas.Link)
 async def create_link(
@@ -86,7 +87,7 @@ async def create_link(
         user_id=current_user.id,
         tag=link.tag, 
     )
-    return crud.convert_db_link_to_schema(new_link)
+    return crud.convert_db_link_to_schema(new_link, db=db)
 
 @router.delete("/{link_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_link(
@@ -130,7 +131,7 @@ def extend_link_expiration(
     db.commit()
     db.refresh(link)
     
-    return crud.convert_db_link_to_schema(link)
+    return crud.convert_db_link_to_schema(link, db=db)
   
 @router.get("/expired", response_model=List[schemas.Link])
 def get_expired_links(
@@ -146,7 +147,7 @@ def get_expired_links(
     now = datetime.utcnow()
     expired_links = db.query(models.Link).filter(models.Link.expires_at < now).all()
     
-    return crud.convert_db_links_to_schemas(expired_links)
+    return crud.convert_db_links_to_schemas(expired_links, db=db)
 
 @router.get("/active", response_model=List[schemas.Link])
 def get_active_links(
@@ -163,7 +164,7 @@ def get_active_links(
         .filter((models.Link.expires_at == None) | (models.Link.expires_at > current_time))
         .all()
     )
-    return crud.convert_db_links_to_schemas(links)
+    return crud.convert_db_links_to_schemas(links, db=db)
 
 @router.get("/{link_id}/stats")
 def get_link_stats(
@@ -172,32 +173,47 @@ def get_link_stats(
     current_user=Depends(get_current_user)
 ):
     """
-    Gets detailed click statistics for a single link.
+    Gets detailed click statistics for a single link using efficient SQL aggregation.
     """
-    link = crud.get_link_by_id_and_owner(db, link_id, current_user.id)
+    # First verify the link belongs to the user (no need to load clicks)
+    link = db.query(models.Link).filter(
+        models.Link.id == link_id, 
+        models.Link.owner_id == current_user.id
+    ).first()
+    
     if not link:
         raise HTTPException(status_code=403, detail="Not authorized or link not found")
 
-    clicks = link.clicks
-    total_clicks = len(clicks)
+    # Efficient SQL aggregation for total clicks
+    total_clicks = db.query(func.count(models.Click.id)).filter(
+        models.Click.link_id == link_id
+    ).scalar() or 0
 
-    def group_by(clicks_list, attr):
-        result = {}
-        for c in clicks_list:
-            key = getattr(c, attr) or "unknown"
-            result[key] = result.get(key, 0) + 1
-        return result
+    # Get last clicked timestamp efficiently
+    last_clicked = db.query(func.max(models.Click.created_at)).filter(
+        models.Click.link_id == link_id
+    ).scalar()
+
+    # Efficient SQL aggregation for breakdowns
+    def get_breakdown(column):
+        results = (
+            db.query(column, func.count(models.Click.id).label('count'))
+            .filter(models.Click.link_id == link_id)
+            .group_by(column)
+            .all()
+        )
+        return {(key or "unknown"): count for key, count in results}
 
     return {
         "short_code": link.short_code,
         "total_clicks": total_clicks,
         "tag": link.tag,
         "created_at": link.created_at,
-        "last_clicked_at": max([c.created_at for c in clicks]) if clicks else None,
-        "by_country": group_by(clicks, "country"),
-        "by_referrer": group_by(clicks, "referrer"),
-        "by_browser": group_by(clicks, "browser"),
-        "by_device": group_by(clicks, "device_type"),
+        "last_clicked_at": last_clicked,
+        "by_country": get_breakdown(models.Click.country),
+        "by_referrer": get_breakdown(models.Click.referrer),
+        "by_browser": get_breakdown(models.Click.browser),
+        "by_device": get_breakdown(models.Click.device_type),
     }
 
 @router.delete("/users/me", status_code=status.HTTP_204_NO_CONTENT)

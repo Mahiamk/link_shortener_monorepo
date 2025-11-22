@@ -18,7 +18,14 @@ if SQLALCHEMY_DATABASE_URL.startswith("mysql://"):
         "mysql://", "mysql+pymysql://", 1
     )
 
-engine = create_engine(SQLALCHEMY_DATABASE_URL)
+engine = create_engine(
+    SQLALCHEMY_DATABASE_URL,
+    pool_size=10,              # Number of persistent connections
+    max_overflow=20,           # Additional connections under high load
+    pool_pre_ping=True,        # Verify connection health before use
+    pool_recycle=3600,         # Recycle connections after 1 hour
+    echo=False                 # Set to True for SQL query logging (dev only)
+)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

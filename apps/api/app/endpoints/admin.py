@@ -61,7 +61,7 @@ def get_all_links(db: Session = Depends(get_db)):
     """
     links = crud.get_all_links(db)
     # convert each link to schema
-    return crud.convert_db_links_to_schemas(links)
+    return crud.convert_db_links_to_schemas(links, db=db)
   
 
 # ---  Endpoint to Activate/Deactivate User --- 

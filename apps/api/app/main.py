@@ -71,17 +71,13 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
           detail="Invalid token"
         )
         
-@app.get("/")
+@app.get("/", tags=["Root"])
 async def root():
-    return {"message": "Link Shortener API is running."}
+    return {"message": "Welcome to the LinkShorty API!"}
   
 @app.get("/health")
 async def health_check():
     return {"status": "healthy", "timestamp": datetime.now(datetime.astimezone.utc)}
-  
-@app.get("/", tags=["Root"])
-async def read_root():
-    return {"message": "Welcome to the LinkShorty API!"}
  
 app.include_router(contact.router, prefix="/api", tags=["Contact"]) 
 app.include_router(auth.router, prefix="/auth", tags=["Authentication"])  

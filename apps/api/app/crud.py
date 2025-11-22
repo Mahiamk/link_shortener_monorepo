@@ -135,6 +135,7 @@ def create_db_link(db: Session, original_url: str, user_id: int, tag: str | None
     # Generate unique short code with safety limit to prevent infinite loops
     max_attempts = 10
     code_length = 6
+    max_code_length = 16  # Safety limit for fallback
     
     for attempt in range(max_attempts):
         short_code = secrets.token_urlsafe(code_length)
@@ -146,13 +147,21 @@ def create_db_link(db: Session, original_url: str, user_id: int, tag: str | None
         if attempt == max_attempts - 1:
             code_length = 8
     else:
-        # Final fallback: generate longer code until unique (very unlikely to loop)
-        while True:
+        # Final fallback: try with progressively longer codes, up to max_code_length
+        fallback_attempts = 0
+        max_fallback_attempts = 20
+        while fallback_attempts < max_fallback_attempts:
             short_code = secrets.token_urlsafe(code_length)
             exists = db.query(models.Link.id).filter(models.Link.short_code == short_code).first()
             if not exists:
                 break
-            code_length += 1  # Progressively increase length if needed
+            fallback_attempts += 1
+            # Progressively increase length, up to max
+            if code_length < max_code_length:
+                code_length += 1
+        else:
+            # Extremely unlikely: fallback to UUID-based code as last resort
+            short_code = secrets.token_urlsafe(12)
     
     expires_at = datetime.utcnow() + timedelta(days=30)
     db_link = models.Link(

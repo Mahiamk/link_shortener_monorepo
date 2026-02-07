@@ -49,8 +49,8 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"form">
           <p className="text-muted-foreground text-sm text-balance">
             Enter your email and password to register
           </p>
-          {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
-          {success && <p className="text-green-600 text-sm mt-1">{success}</p>}
+          {error && <p className="text-gray-500 text-sm mt-1">{error}</p>}
+          {success && <p className="text-gray-600 text-sm mt-1">{success}</p>}
         </div>
         
         {/* If registration is successful, hide the form */}

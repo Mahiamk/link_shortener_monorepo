@@ -32,7 +32,7 @@ import { useEffect, useState } from "react"
 const chartConfig = {
   users: {
     label: "New Users",
-    color: "hsl(var(--chart-1))", // Use Shadcn's CSS variables for color
+    color: "var(--chart-1)", // Use Shadcn's CSS variables for color
   },
 } satisfies ChartConfig
 
@@ -112,7 +112,7 @@ export function UserRegistrationChart() {
       </CardHeader>
       <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
         {loading && <p className="text-center text-gray-500 py-10">Loading chart data...</p>}
-        {error && <p className="text-center text-red-500 py-10">{error}</p>}
+        {error && <p className="text-center text-gray-500 py-10">{error}</p>}
         {!loading && !error && chartData.length === 0 && (
           <p className="text-center text-gray-500 py-10">No registration data found for this period.</p>
         )}

@@ -23,10 +23,10 @@ export function Header() {
       <nav aria-label="Global" className="flex items-center justify-between p-3 lg:px-8">
         <div className="flex lg:flex-1">
           <Link href="/" className="flex items-center gap-2">
-            <svg className="h-8 w-auto text-indigo-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+            <svg className="h-8 w-auto text-black" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
             </svg>
-            <span className="text-lg font-semibold text-indigo-600">LinkShorty</span>
+            <span className="text-lg font-semibold text-black">LinkShorty</span>
           </Link>
         </div>
         <div className="flex lg:hidden">
@@ -57,10 +57,10 @@ export function Header() {
         <DialogPanel className="fixed inset-y-0 right-0 z-50 w-full overflow-y-auto bg-white p-6 sm:max-w-sm sm:ring-1 sm:ring-gray-900/10">
           <div className="flex items-center justify-between">
               <Link href="/" className="flex items-center gap-2">
-                <svg className="h-8 w-auto text-indigo-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                <svg className="h-8 w-auto text-black" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
                 </svg>
-                <span className="text-lg font-semibold text-indigo-600">LinkShorty</span>
+                <span className="text-lg font-semibold text-black">LinkShorty</span>
               </Link>
             <button
               type="button"

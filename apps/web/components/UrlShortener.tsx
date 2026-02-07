@@ -145,7 +145,7 @@ export function UrlShortener({ onLinkCreated }: UrlShortenerProps) {
               <input
                 type="url" id="longUrl" placeholder="https://example.com/a-very-long-url-to-shorten"
                 value={longUrl} onChange={(e) => setLongUrl(e.target.value)} required
-                className="w-full rounded-lg border border-gray-300 py-3 pl-10 pr-4 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full rounded-lg border border-gray-300 py-3 pl-10 pr-4 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500"
               />
             </div>
           </div>
@@ -158,19 +158,19 @@ export function UrlShortener({ onLinkCreated }: UrlShortenerProps) {
               <input
                 type="text" id="tag" placeholder="e.g., 'Marketing Campaign'"
                 value={tag} onChange={(e) => setTag(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 py-3 px-4 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full rounded-lg border border-gray-300 py-3 px-4 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500"
               />
             </div>
             <button
               type="submit" disabled={isLoading || !longUrl}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-6 py-3 text-base font-semibold text-white shadow-sm hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-black px-6 py-3 text-base font-semibold text-white shadow-sm hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
             >
               {isLoading ? (<Loader2 className="h-5 w-5 animate-spin" />) : (<Plus className="h-5 w-5" />)}
               {isLoading ? 'Shortening...' : 'Shorten'}
             </button>
           </div>
         
-          {error && (<p className="mt-2 text-sm text-red-600">{error}</p>)}
+          {error && (<p className="mt-2 text-sm text-gray-600">{error}</p>)}
         </form>
 
       ) : (
@@ -188,7 +188,7 @@ export function UrlShortener({ onLinkCreated }: UrlShortenerProps) {
           <div>
             <label className="mb-1 block text-xs font-medium text-gray-500"> Your Short Link </label>
             <div className="flex gap-2">
-              <input type="text" value={fullShortUrl} readOnly className="flex-1 rounded-lg border border-gray-300 bg-gray-50 py-3 px-4 text-sm text-indigo-700 focus:outline-none" />
+              <input type="text" value={fullShortUrl} readOnly className="flex-1 rounded-lg border border-gray-300 bg-gray-50 py-3 px-4 text-sm text-gray-700 focus:outline-none" />
               <button onClick={handleCopy} >
                 {isCopied ? <CopyCheck className="h-5 w-5" /> : <ClipboardIcon className="h-5 w-5 cursor-pointer" />}
                 {isCopied ? 'Copied!' : 'Copy'}
@@ -227,7 +227,7 @@ export function UrlShortener({ onLinkCreated }: UrlShortenerProps) {
               <button
                 onClick={handleDownloadQr}
                 disabled={isDownloading}
-                className="flex items-center justify-center gap-1.5 rounded-md bg-indigo-100 px-4 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center justify-center gap-1.5 rounded-md bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Download QR Code as PNG"
               >
                 {isDownloading ? (

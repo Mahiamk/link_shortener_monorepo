@@ -34,9 +34,9 @@ function NavigationContent() {
     <>
       {/* Sidebar Header */}
       <div className="flex h-16 shrink-0 items-center border-b border-gray-200 px-6">
-        <h2 className="text-lg font-semibold text-indigo-600">
+        <h2 className="text-lg font-semibold text-gray-600">
           LinkShorty
-          <span className="ml-1.5 rounded-md bg-indigo-100 px-2 py-0.5 text-xs font-bold text-indigo-700">
+          <span className="ml-1.5 rounded-md bg-gray-100 px-2 py-0.5 text-xs font-bold text-gray-700">
             Admin
           </span>
         </h2>
@@ -58,7 +58,7 @@ function NavigationContent() {
                     className={classNames(
                       'group flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium',
                       isActive
-                        ? 'bg-indigo-50 text-indigo-700'
+                        ? 'bg-gray-50 text-gray-700'
                         : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900',
                     )}
                   >
@@ -66,7 +66,7 @@ function NavigationContent() {
                       className={classNames(
                         'h-5 w-5 shrink-0',
                         isActive
-                          ? 'text-indigo-600'
+                          ? 'text-gray-600'
                           : 'text-gray-400 group-hover:text-gray-500',
                       )}
                     />

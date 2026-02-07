@@ -11,7 +11,7 @@ import secrets
 
 # --- Helper Functions ---
 
-def convert_db_link_to_schema(db_link: models.Link) -> dict:
+def convert_db_link_to_schema(db_link: models.Link, click_count: int = None) -> dict:
     """
     Safely converts a Link database object into a dictionary
     that matches the schemas.Link Pydantic model.
@@ -29,12 +29,17 @@ def convert_db_link_to_schema(db_link: models.Link) -> dict:
     # Convert owner to UserOut schema if it exists, otherwise None
     owner_out = schemas.UserOut.from_orm(db_link.owner) if db_link.owner else None
 
+    if click_count is not None:
+        computed_clicks = click_count
+    else:
+        computed_clicks = len(db_link.clicks) if hasattr(db_link, 'clicks') and db_link.clicks else 0
+
     return {
         "id": db_link.id,
         "original_url": db_link.original_url,
         "short_code": db_link.short_code,
         # Safely calculate click count
-        "clicks": len(db_link.clicks) if hasattr(db_link, 'clicks') and db_link.clicks else 0,
+        "clicks": computed_clicks,
         "created_at": db_link.created_at,
         "owner_id": db_link.owner_id,
         "tag": db_link.tag,
@@ -44,9 +49,20 @@ def convert_db_link_to_schema(db_link: models.Link) -> dict:
         "owner": owner_out # Include the owner details
     }
 
-def convert_db_links_to_schemas(db_links: List[models.Link]) -> List[dict]:
-    """Applies the conversion to a list of link objects."""
-    return [convert_db_link_to_schema(link) for link in db_links]
+def convert_db_links_to_schemas(db_links: List[any]) -> List[dict]:
+    """Applies the conversion to a list of link objects or (link, count) tuples."""
+    results = []
+    for item in db_links:
+        if isinstance(item, models.Link):
+             results.append(convert_db_link_to_schema(item))
+        else:
+             # Expecting Row/Tuple (models.Link, count)
+             try:
+                results.append(convert_db_link_to_schema(item[0], click_count=item[1]))
+             except (IndexError, TypeError):
+                # Fallback or skip if data format is unexpected
+                continue
+    return results
 
 def get_mysql_date_trunc(column, interval):
     """Returns the correct MySQL function for truncating a date."""
@@ -93,7 +109,7 @@ def get_link_by_short_code(db: Session, short_code: str):
     """Fetches a link by its unique short code."""
     return (
         db.query(models.Link)
-        .options(joinedload(models.Link.owner), subqueryload(models.Link.clicks))
+        .options(joinedload(models.Link.owner))
         .filter(models.Link.short_code == short_code)
         .first()
     )
@@ -119,9 +135,11 @@ def create_db_link(db: Session, original_url: str, user_id: int, tag: str | None
 def get_links_by_user(db: Session, user_id: int) -> List[models.Link]:
     """Gets all links for a specific user."""
     return (
-        db.query(models.Link)
-        .options(joinedload(models.Link.owner), subqueryload(models.Link.clicks))
+        db.query(models.Link, func.count(models.Click.id).label('click_count'))
+        .outerjoin(models.Click, models.Link.id == models.Click.link_id)
+        .options(joinedload(models.Link.owner))
         .filter(models.Link.owner_id == user_id)
+        .group_by(models.Link.id)
         .order_by(models.Link.created_at.desc())
         .all()
     )
@@ -129,11 +147,9 @@ def get_links_by_user(db: Session, user_id: int) -> List[models.Link]:
 def get_link_by_id_and_owner(db: Session, link_id: int, user_id: int) -> models.Link | None:
     """
     Fetches a single link by its ID, ensuring it belongs to the specified user.
-    Eagerly loads clicks data.
     """
     return (
         db.query(models.Link)
-        .options(subqueryload(models.Link.clicks)) # Eager load clicks specifically for stats
         .filter(models.Link.id == link_id, models.Link.owner_id == user_id)
         .first()
     )
@@ -190,8 +206,10 @@ def get_all_users(db: Session, skip: int = 0, limit: int = 100) -> List[models.U
 def get_all_links(db: Session, skip: int = 0, limit: int = 100) -> List[models.Link]:
     """Gets all links (for admin), eager loading relationships."""
     return (
-        db.query(models.Link)
-        .options(joinedload(models.Link.owner), subqueryload(models.Link.clicks))
+        db.query(models.Link, func.count(models.Click.id).label('click_count'))
+        .outerjoin(models.Click, models.Link.id == models.Click.link_id)
+        .options(joinedload(models.Link.owner))
+        .group_by(models.Link.id)
         .order_by(models.Link.created_at.desc())
         .offset(skip)
         .limit(limit)

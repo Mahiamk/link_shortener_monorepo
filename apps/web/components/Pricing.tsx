@@ -62,7 +62,7 @@ export function Pricing() {
     <div className="bg-white py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="mx-auto max-w-4xl text-center">
-          <h2 className="text-base font-semibold leading-7 text-indigo-600">
+          <h2 className="text-base font-semibold leading-7 text-gray-600">
             Pricing
           </h2>
           <p className="mt-2 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
@@ -71,7 +71,7 @@ export function Pricing() {
         </div>
         <p className="mx-auto mt-6 max-w-2xl text-center text-lg leading-8 text-gray-900">
           We offer a powerful{" "}
-          <span className="font-semibold px-1 py-1 rounded-xl bg-gradient-to-r from-pink-400 via-gray-300 to-blue-400 text-gray-800 shadow-md shadow-pink-300/40 backdrop-blur">
+          <span className="font-semibold px-1 py-1 rounded-xl bg-gradient-to-r from-gray-400 via-gray-300 to-gray-400 text-gray-800 shadow-md shadow-gray-300/40 backdrop-blur">
             Free Starter
           </span>{" "}
           plan with no time limits. When your needs grow, our advanced tiers are ready for you.
@@ -83,14 +83,14 @@ export function Pricing() {
             <div
               key={tier.id}
               className={classNames(
-                tier.highlight ? 'ring-2 ring-indigo-600' : 'ring-1 ring-gray-200',
+                tier.highlight ? 'ring-2 ring-gray-600' : 'ring-1 ring-gray-200',
                 'rounded-3xl p-8 shadow-xl transition hover:shadow-2xl bg-white flex flex-col',
               )}
             >
               <h3
                 id={tier.id}
                 className={classNames(
-                  tier.highlight ? 'text-indigo-600' : 'text-gray-900',
+                  tier.highlight ? 'text-gray-600' : 'text-gray-900',
                   'text-lg font-semibold leading-8',
                 )}
               >
@@ -110,7 +110,7 @@ export function Pricing() {
                 aria-describedby={tier.id}
                 className={classNames(
                   tier.highlight
-                    ? 'bg-indigo-600 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline-indigo-600'
+                    ? 'bg-black text-white shadow-sm hover:bg-gray-800 focus-visible:outline-gray-600'
                     : 'text-gray-900 ring-1 ring-inset ring-gray-200 hover:ring-gray-300 focus-visible:outline-gray-900',
                   'mt-6 block rounded-md py-2 px-3 text-center text-sm font-semibold leading-6 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50',
                 )}
@@ -120,7 +120,7 @@ export function Pricing() {
               <ul role="list" className="mt-8 space-y-3 text-sm leading-6 text-gray-600 flex-grow">
                 {tier.features.map((feature) => (
                   <li key={feature} className="flex gap-x-3">
-                    <CheckIcon className="h-6 w-5 flex-none text-indigo-600" aria-hidden="true" />
+                    <CheckIcon className="h-6 w-5 flex-none text-gray-600" aria-hidden="true" />
                     {feature}
                   </li>
                 ))}

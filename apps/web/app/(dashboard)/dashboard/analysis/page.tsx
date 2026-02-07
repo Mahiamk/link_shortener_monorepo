@@ -98,7 +98,7 @@ export default function AnalysisPage() {
   if (error) {
      return (
        <div className="flex items-center justify-center p-10">
-         <p className="text-red-500">{error}</p>
+         <p className="text-gray-500">{error}</p>
        </div>
      );
   }

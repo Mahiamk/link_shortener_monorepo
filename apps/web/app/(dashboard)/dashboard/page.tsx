@@ -52,7 +52,7 @@ function UserMenu({
     <div className="relative">
       {/* <button 
         onClick={() => setIsOpen(!isOpen)} 
-        className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 text-gray-600 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 text-gray-600 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500"
       >
         <UserIcon className="h-5 w-5" />
       </button> */}
@@ -72,9 +72,9 @@ function UserMenu({
             {isSuperuser && (
               <a
                 href="/admin" // Link to your admin page
-                className="group flex w-full items-center gap-2 px-4 py-3 text-sm text-indigo-600 hover:bg-gray-100"
+                className="group flex w-full items-center gap-2 px-4 py-3 text-sm text-gray-600 hover:bg-gray-100"
               >
-                <ShieldCheck className="h-5 w-5 text-indigo-500 group-hover:text-indigo-600" />
+                <ShieldCheck className="h-5 w-5 text-gray-500 group-hover:text-gray-600" />
                 Admin Dashboard
               </a>
             )}
@@ -83,7 +83,7 @@ function UserMenu({
               onClick={onLogout}
               className="group flex w-full items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-gray-100"
             >
-              <LogOut className="h-5 w-5 text-gray-500 group-hover:text-indigo-600" />
+              <LogOut className="h-5 w-5 text-gray-500 group-hover:text-gray-600" />
               Logout
             </button>
           </div>
@@ -278,7 +278,7 @@ export default function DashboardPage() {
         {/* --- Links Table --- */}
         <div>
           <h2 className="text-2xl font-semibold text-gray-900 mb-6">Your Links</h2>
-          {error && <p className="mb-4 text-red-500">{error}</p>}
+          {error && <p className="mb-4 text-gray-500">{error}</p>}
           
           <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
             <table className="min-w-full divide-y divide-gray-200">
@@ -311,18 +311,18 @@ export default function DashboardPage() {
                             href={`${BASE_URL}/${link.short_code}`} 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            className="font-medium text-indigo-600 hover:text-indigo-800"
+                            className="font-medium text-blue-600 hover:text-blue-800"
                           >
                             {`${BASE_URL.replace(/^https?:\/\//, '')}/${link.short_code}`}
                           </a>
                           <button
                             onClick={() => handleCopy(link.short_code)}
                             title="Copy short link"
-                            className="text-gray-400 hover:text-indigo-600"
+                            className="text-gray-400 hover:text-gray-600"
                           >
                             <span className="sr-only">Copy</span>
                             {copiedLink === link.id ? (
-                              <span className="text-xs text-indigo-600">Copied!</span>
+                              <span className="text-xs text-gray-600">Copied!</span>
                             ) : (
                               <Copy className="h-4 w-4" />
                             )}
@@ -344,7 +344,7 @@ export default function DashboardPage() {
                             target="_blank" 
                             rel="noopener noreferrer" 
                             title="Visit original URL"
-                            className="ml-2 text-gray-400 hover:text-indigo-600"
+                            className="ml-2 text-gray-400 hover:text-gray-600"
                           >
                             <ExternalLink className="h-4 w-4" />
                           </a>
@@ -360,7 +360,7 @@ export default function DashboardPage() {
                       <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
                         <button
                           onClick={() => setSelectedLinkStats(link.id)}
-                          className="text-gray-400 hover:text-indigo-600"
+                          className="text-gray-400 hover:text-blue-600"
                           title="View stats"
                         >
                           <ChartBarIcon className="h-5 w-5" />
@@ -369,7 +369,7 @@ export default function DashboardPage() {
 
                         <button 
                           onClick={() => handleDelete(link.id)} 
-                          className="text-red-500 hover:text-red-700"
+                          className="text-gray-500 hover:text-red-600"
                           title="Delete link"
                         >
                           <Trash2 className="h-5 w-5" />

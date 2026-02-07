@@ -13,7 +13,7 @@ import {
 const chartConfig = {
   clicks: {
     label: "Clicks",
-    color: "hsl(var(--chart-1))", // Or use a different chart color if desired
+    color: "var(--chart-1)", // Or use a different chart color if desired
   },
 } satisfies ChartConfig
 

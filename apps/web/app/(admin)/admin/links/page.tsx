@@ -101,7 +101,7 @@ export default function AdminLinksPage() {
   if (error) {
     return (
       <div className="flex items-center justify-center p-10">
-        <p className="text-red-500">{error}</p>
+        <p className="text-gray-500">{error}</p>
       </div>
     )
   }
@@ -141,18 +141,18 @@ export default function AdminLinksPage() {
                         href={`${BASE_URL}/${link.short_code}`} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="font-medium text-indigo-600 hover:text-indigo-800"
+                        className="font-medium text-gray-600 hover:text-gray-800"
                       >
                         {`${BASE_URL.replace(/^https?:\/\//, '')}/${link.short_code}`}
                       </a>
                       <button
                         onClick={() => handleCopy(link.short_code)}
                         title="Copy short link"
-                        className="text-gray-400 hover:text-indigo-600"
+                        className="text-gray-400 hover:text-gray-600"
                       >
                         <span className="sr-only">Copy</span>
                         {copiedLink === link.id ? (
-                          <span className="text-xs text-indigo-600">Copied!</span>
+                          <span className="text-xs text-gray-600">Copied!</span>
                         ) : (
                           <Copy className="h-4 w-4" />
                         )}
@@ -177,7 +177,7 @@ export default function AdminLinksPage() {
                         target="_blank" 
                         rel="noopener noreferrer" 
                         title="Visit original URL"
-                        className="ml-2 text-gray-400 hover:text-indigo-600"
+                        className="ml-2 text-gray-400 hover:text-gray-600"
                       >
                         <ExternalLink className="h-4 w-4" />
                       </a>
@@ -204,7 +204,7 @@ export default function AdminLinksPage() {
                       <>
                         <button
                           onClick={() => setSelectedLinkStats(link.id)}
-                          className="text-gray-400 hover:text-indigo-600 inline-flex items-center" title="View stats"
+                          className="text-gray-400 hover:text-gray-600 inline-flex items-center" title="View stats"
                         >
                           <ChartBarSquareIcon className="h-5 w-5" />
                           <span className="sr-only">View Stats</span>
@@ -212,7 +212,7 @@ export default function AdminLinksPage() {
                         
                         <button
                           onClick={() => handleDelete(link.id)}
-                          className="text-red-500 hover:text-red-700 inline-flex items-center" title="Delete link"
+                          className="text-gray-500 hover:text-gray-700 inline-flex items-center" title="Delete link"
                         >
                           <Trash2 className="h-5 w-5" />
                           <span className="sr-only">Delete</span>

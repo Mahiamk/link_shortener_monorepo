@@ -54,7 +54,7 @@ export function AnalyticsModal({
               {/* Header */}
               <div className="flex items-center justify-between rounded-t-xl border-b border-gray-200 bg-gray-50 px-6 py-4">
                  <div className="flex items-center gap-2">
-                  <ChartBarIcon className="h-6 w-6 text-indigo-600" />
+                  <ChartBarIcon className="h-6 w-6 text-gray-600" />
                   <h3 className="text-lg font-semibold text-gray-900"> Link Analytics {stats ? `(${stats.short_code})` : ''} </h3>
                 </div>
                 <button onClick={onClose} > <XMarkIcon className="h-6 w-6" /> <span className="sr-only">Close</span> </button>
@@ -63,14 +63,14 @@ export function AnalyticsModal({
               {/* Body */}
               <div className="max-h-[80vh] overflow-y-auto p-6">
                 {loading && <p className="text-center text-gray-500 py-10">Loading analytics...</p>}
-                {error && <p className="text-center text-red-500 py-10">{error}</p>}
+                {error && <p className="text-center text-gray-500 py-10">{error}</p>}
 
                 {stats && !loading && !error && (
                   <div className="space-y-8">
                     {/* Stat Card */}
-                    <div className="rounded-lg bg-indigo-50 p-4 border border-indigo-200">
-                        <p className="text-sm font-medium text-indigo-700">Total Clicks</p>
-                        <p className="text-4xl font-bold text-indigo-900">{stats.total_clicks}</p>
+                    <div className="rounded-lg bg-gray-50 p-4 border border-gray-200">
+                        <p className="text-sm font-medium text-gray-700">Total Clicks</p>
+                        <p className="text-4xl font-bold text-gray-900">{stats.total_clicks}</p>
                     </div>
 
                     {/* Chart Grid Layout */}

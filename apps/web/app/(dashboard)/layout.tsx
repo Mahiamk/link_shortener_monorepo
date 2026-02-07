@@ -33,7 +33,7 @@ function UserMenu({ email, isSuperuser, onLogout }: { email: string, isSuperuser
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 text-gray-600 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 text-gray-600 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500"
       >
         <UserCircleIcon className="h-6 w-6" />
       </button>
@@ -54,15 +54,15 @@ function UserMenu({ email, isSuperuser, onLogout }: { email: string, isSuperuser
                 className="group flex w-full items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-gray-100"
                 onClick={() => setIsOpen(false)}
               >
-                <ShieldCheckIcon className="h-5 w-5 text-gray-500 group-hover:text-indigo-600" />
+                <ShieldCheckIcon className="h-5 w-5 text-gray-500 group-hover:text-gray-600" />
                 Admin Panel
               </Link>
             )}
             <button
               onClick={() => { onLogout(); setIsOpen(false); }}
-              className="group flex w-full items-center gap-2 px-4 py-3 text-sm text-red-600 hover:bg-gray-100"
+              className="group flex w-full items-center gap-2 px-4 py-3 text-sm text-gray-600 hover:bg-gray-100"
             >
-              <ArrowRightStartOnRectangleIcon className="h-5 w-5 text-red-500 group-hover:text-red-700" />
+              <ArrowRightStartOnRectangleIcon className="h-5 w-5 text-gray-500 group-hover:text-gray-700" />
               Logout
             </button>
           </div>
@@ -132,10 +132,10 @@ export default function DashboardLayout({
       <div className="flex h-16 shrink-0 items-center border-b border-gray-200 px-6 bg-white">
         <Link 
         href="/dashboard"className="flex items-center gap-2">
-           <svg className="h-8 w-auto text-indigo-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+           <svg className="h-8 w-auto text-gray-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
           </svg>
-          <span className="text-lg font-semibold text-indigo-600">LinkShorty</span>
+          <span className="text-lg font-semibold text-gray-600">LinkShorty</span>
         </Link>
       </div>
       <nav className="flex flex-1 flex-col overflow-y-auto bg-white p-4">
@@ -152,14 +152,14 @@ export default function DashboardLayout({
                     onClick={() => setSidebarOpen(false)} // <-- ADD THIS LINE
                     className={classNames(
                       isActive
-                        ? 'bg-indigo-50 text-indigo-600'
-                        : 'text-gray-700 hover:text-indigo-600 hover:bg-gray-50',
+                        ? 'bg-gray-50 text-gray-600'
+                        : 'text-gray-700 hover:text-gray-600 hover:bg-gray-50',
                       'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold'
                     )}
                   >
                     <item.icon
                       className={classNames(
-                        isActive ? 'text-indigo-600' : 'text-gray-400 group-hover:text-indigo-600',
+                        isActive ? 'text-gray-600' : 'text-gray-400 group-hover:text-gray-600',
                         'h-6 w-6 shrink-0'
                       )}
                       aria-hidden="true"

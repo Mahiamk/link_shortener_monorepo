@@ -134,7 +134,7 @@ export default function AdminSubmissionsPage() {
         <div className="mt-10 text-center text-gray-500">Loading...</div>
       )}
       {error && (
-        <div className="mt-10 rounded-md border border-red-300 bg-red-50 p-4 text-center text-red-700">
+        <div className="mt-10 rounded-md border border-gray-300 bg-gray-50 p-4 text-center text-gray-700">
           {error}
         </div>
       )}
@@ -182,7 +182,7 @@ export default function AdminSubmissionsPage() {
                       <button
                         type="button"
                         onClick={() => handleDelete(sub.id)}
-                        className="inline-flex items-center gap-1.5 rounded-md bg-white px-3 py-1.5 text-sm font-semibold text-red-600 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+                        className="inline-flex items-center gap-1.5 rounded-md bg-white px-3 py-1.5 text-sm font-semibold text-gray-600 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
                       >
                         <Trash2 className="h-4 w-4" />
                         Delete

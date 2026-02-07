@@ -102,7 +102,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"form">)
           <p className="text-muted-foreground text-sm text-balance">
             Enter your email below to login to your account
           </p>
-          {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
+          {error && <p className="text-gray-500 text-sm mt-1">{error}</p>}
         </div>
         <Field>
           <FieldLabel htmlFor="email">Email</FieldLabel>

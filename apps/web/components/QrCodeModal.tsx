@@ -69,14 +69,14 @@ export function QrCodeModal({ link, open, onClose }: QrCodeModalProps) {
               {/* Header */}
               <div className="flex items-center justify-between rounded-t-xl border-b border-gray-200 bg-gray-50 px-5 py-3.5">
                  <div className="flex items-center gap-2">
-                  <QrCodeIcon className="h-5 w-5 text-indigo-600" />
+                  <QrCodeIcon className="h-5 w-5 text-gray-600" />
                   <h3 className="text-base font-semibold text-gray-900">
                     QR Code
                   </h3>
                 </div>
                 <button
                   onClick={onClose}
-                  className="-m-1 rounded-full p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                  className="-m-1 rounded-full p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
                 >
                   <XMarkIcon className="h-5 w-5" />
                   <span className="sr-only">Close</span>
@@ -101,7 +101,7 @@ export function QrCodeModal({ link, open, onClose }: QrCodeModalProps) {
                      <button
                        onClick={handleDownloadQr}
                        disabled={isDownloading}
-                       className="w-full flex items-center justify-center gap-1.5 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                       className="w-full flex items-center justify-center gap-1.5 rounded-md bg-black px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
                        title="Download QR Code as PNG"
                      >
                        {isDownloading ? (

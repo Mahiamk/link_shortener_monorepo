@@ -118,7 +118,7 @@ export default function AdminUsersPage() {
   if (error) {
     return (
       <div className="flex items-center justify-center p-10">
-        <p className="text-red-500">{error}</p>
+        <p className="text-gray-500">{error}</p>
       </div>
     );
   }
@@ -165,7 +165,7 @@ export default function AdminUsersPage() {
                   {/* Role */}
                   <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
                     {user.is_superuser ? (
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-100 px-3 py-1 text-xs font-medium text-indigo-700">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">
                         <ShieldCheck className="h-4 w-4" />
                         Admin
                       </span>
@@ -178,11 +178,11 @@ export default function AdminUsersPage() {
                   {/* Status */}
                   <td className="whitespace-nowrap px-6 py-4">
                     {user.is_active ? (
-                      <span className="inline-flex rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800">
+                      <span className="inline-flex rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-800">
                         Active
                       </span>
                     ) : (
-                      <span className="inline-flex rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-800">
+                      <span className="inline-flex rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-800">
                         Inactive
                       </span>
                     )}
@@ -203,8 +203,8 @@ export default function AdminUsersPage() {
                           disabled={user.email === currentAdminEmail}
                           className={`inline-flex items-center p-1 rounded-full disabled:opacity-50 disabled:cursor-not-allowed ${
                             user.is_active
-                              ? 'text-gray-400 hover:text-yellow-600'
-                              : 'text-gray-400 hover:text-green-600'
+                              ? 'text-gray-400 hover:text-gray-600'
+                              : 'text-gray-400 hover:text-gray-600'
                           }`}
                           title={user.is_active ? 'Deactivate User' : 'Activate User'}
                         >
@@ -216,7 +216,7 @@ export default function AdminUsersPage() {
                         <button
                           onClick={() => handleDeleteUser(user)}
                           disabled={user.email === currentAdminEmail}
-                          className="text-gray-400 hover:text-red-600 inline-flex items-center p-1 rounded-full disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="text-gray-400 hover:text-gray-600 inline-flex items-center p-1 rounded-full disabled:opacity-50 disabled:cursor-not-allowed"
                           title="Delete User"
                         >
                           <Trash2 className="h-5 w-5" />

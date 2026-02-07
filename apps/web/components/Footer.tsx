@@ -33,10 +33,10 @@ export function Footer() {
           {/* Brand & Socials Section */}
           <div className="space-y-4">
             <Link href="/" className="flex items-center gap-2">
-              <svg className="h-10 w-auto text-indigo-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <svg className="h-10 w-auto text-gray-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
               </svg>
-              <span className="text-lg font-semibold text-indigo-600">LinkShorty</span>
+              <span className="text-lg font-semibold text-gray-600">LinkShorty</span>
             </Link>
             <p className="text-sm leading-6 text-gray-300">
               Shorten, share, and analyze your links with precision.

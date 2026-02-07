@@ -68,7 +68,7 @@ function VerificationComponent() {
 
       {status === 'success' && (
         <>
-          <CheckCircle className="h-12 w-12 text-green-500" />
+          <CheckCircle className="h-12 w-12 text-gray-500" />
           <h1 className="mt-4 text-2xl font-semibold text-gray-900">
             {message}
           </h1>
@@ -84,7 +84,7 @@ function VerificationComponent() {
 
       {status === 'error' && (
         <>
-          <XCircle className="h-12 w-12 text-red-500" />
+          <XCircle className="h-12 w-12 text-gray-500" />
           <h1 className="mt-4 text-2xl font-semibold text-gray-900">
             Verification Failed
           </h1>

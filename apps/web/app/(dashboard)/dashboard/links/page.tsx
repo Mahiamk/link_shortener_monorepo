@@ -86,7 +86,7 @@ export default function YourLinksPage() {
   return (
     <div>
       <h2 className="text-2xl font-semibold text-gray-900 mb-6">Your Links</h2>
-      {error && <p className="mb-4 text-red-500">{error}</p>}
+      {error && <p className="mb-4 text-gray-500">{error}</p>}
 
       <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
         {loading && links.length === 0 ? (
@@ -116,11 +116,11 @@ export default function YourLinksPage() {
                     {/* Short Link */}
                     <td className="whitespace-nowrap px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <a href={`${BASE_URL}/${link.short_code}`} target="_blank" rel="noopener noreferrer" className="font-medium text-indigo-600 hover:text-indigo-800">
+                        <a href={`${BASE_URL}/${link.short_code}`} target="_blank" rel="noopener noreferrer" className="font-medium text-gray-600 hover:text-gray-800">
                           {`${BASE_URL.replace(/^https?:\/\//, '')}/${link.short_code}`}
                         </a>
-                        <button onClick={() => handleCopy(link.short_code)} title="Copy short link" className="text-gray-400 hover:text-indigo-600">
-                          {copiedLink === link.id ? (<span className="text-xs text-indigo-600">Copied!</span>) : (<Copy className="h-4 w-4" />)}
+                        <button onClick={() => handleCopy(link.short_code)} title="Copy short link" className="text-gray-400 hover:text-gray-600">
+                          {copiedLink === link.id ? (<span className="text-xs text-gray-600">Copied!</span>) : (<Copy className="h-4 w-4" />)}
                         </button>
                       </div>
                     </td>
@@ -129,7 +129,7 @@ export default function YourLinksPage() {
                       <div className="flex items-center gap-2 truncate">
                          <img src={`https://www.google.com/s2/favicons?domain=${new URL(link.original_url).hostname}&sz=16`} alt="favicon" className="h-4 w-4 flex-shrink-0" onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')} />
                         <span className="truncate">{link.original_url}</span>
-                        <a href={link.original_url} target="_blank" rel="noopener noreferrer" title="Visit original URL" className="ml-2 text-gray-400 hover:text-indigo-600">
+                        <a href={link.original_url} target="_blank" rel="noopener noreferrer" title="Visit original URL" className="ml-2 text-gray-400 hover:text-gray-600">
                           <ExternalLink className="h-4 w-4" />
                         </a>
                       </div>
@@ -142,18 +142,18 @@ export default function YourLinksPage() {
                     <td className="whitespace-nowrap px-6 py-4 text-left text-sm font-medium space-x-4">
                       <button
                         onClick={() => setSelectedLinkQr(link)} // Pass the whole link object
-                        className="text-gray-400 hover:text-indigo-600 inline-flex items-center"
+                        className="text-gray-400 hover:text-gray-600 inline-flex items-center"
                         title="View QR Code"
                       >
                         <QrCodeIcon className="h-5 w-5" />
                         <span className="sr-only">View QR Code</span>
                       </button>
 
-                      <button onClick={() => setSelectedLinkStats(link.id)} className="text-gray-400 hover:text-indigo-600 inline-flex items-center" title="View stats">
+                      <button onClick={() => setSelectedLinkStats(link.id)} className="text-gray-400 hover:text-gray-600 inline-flex items-center" title="View stats">
                         <BarChartHorizontal className="h-5 w-5" />
                         <span className="sr-only">View Stats</span>
                       </button>
-                      <button onClick={() => handleDelete(link.id)} className="text-red-500 hover:text-red-700 inline-flex items-center" title="Delete link">
+                      <button onClick={() => handleDelete(link.id)} className="text-gray-500 hover:text-gray-700 inline-flex items-center" title="Delete link">
                         <Trash2 className="h-5 w-5" />
                         <span className="sr-only">Delete</span>
                       </button>

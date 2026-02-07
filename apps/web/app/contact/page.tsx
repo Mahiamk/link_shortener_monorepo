@@ -272,7 +272,7 @@ export default function ContactPage() {
                 </p>
               )}
                {formStatus === 'error' && (
-                <p className="mt-4 text-center text-sm text-red-600">
+                <p className="mt-4 text-center text-sm text-gray-600">
                   Something went wrong. Please try again.
                 </p>
               )}

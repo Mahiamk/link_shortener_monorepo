@@ -59,7 +59,57 @@ class LinkCreate(BaseModel):
     original_url: str
     tag: Optional[str] = None
 
-# --- Endpoints ---
+
+# ── Public (unauthenticated) endpoints — MUST be defined before any /{param} routes ──
+
+class PublicShortenRequest(BaseModel):
+    url: str
+
+
+@router.post("/public/shorten", status_code=status.HTTP_201_CREATED)
+@limiter.limit("10/hour")
+async def public_shorten_link(
+    request: Request,
+    data: PublicShortenRequest,
+    db: Session = Depends(get_db),
+):
+    """Shorten a URL without authentication. Rate-limited to 10/hour per IP."""
+    try:
+        parsed = urlparse(data.url)
+        if parsed.scheme not in ("http", "https") or not parsed.netloc:
+            raise ValueError
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid URL. Must start with http:// or https://",
+        )
+
+    short_code = secrets.token_urlsafe(6)
+    while crud.get_link_by_short_code(db, short_code):
+        short_code = secrets.token_urlsafe(6)
+
+    db_link = models.Link(
+        original_url=data.url,
+        short_code=short_code,
+        owner_id=None,
+        expires_at=datetime.utcnow() + timedelta(days=7),
+    )
+    db.add(db_link)
+    db.commit()
+
+    return {"short_code": short_code}
+
+
+@router.get("/public/stats")
+def get_public_stats(db: Session = Depends(get_db)):
+    """Returns total link and click counts for public display. No auth required."""
+    return {
+        "total_links":  crud.get_link_count(db),
+        "total_clicks": crud.get_click_count(db),
+    }
+
+
+# ── Authenticated endpoints ────────────────────────────────────────────────────
 
 @router.get("/", response_model=List[schemas.Link])
 async def get_user_links(
@@ -213,56 +263,4 @@ def delete_current_user(
     return
 
 
-# ── Public (unauthenticated) link shortening ──────────────────────────────────
-
-class PublicShortenRequest(BaseModel):
-    url: str
-
-
-@router.post("/public/shorten", status_code=status.HTTP_201_CREATED)
-@limiter.limit("10/hour")
-async def public_shorten_link(
-    request: Request,
-    data: PublicShortenRequest,
-    db: Session = Depends(get_db),
-):
-    """
-    Shorten a URL without authentication. Rate-limited to 10/hour per IP.
-    Resulting links expire after 7 days and have no owner.
-    """
-    try:
-        parsed = urlparse(data.url)
-        if parsed.scheme not in ("http", "https") or not parsed.netloc:
-            raise ValueError
-    except Exception:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid URL. Must start with http:// or https://",
-        )
-
-    short_code = secrets.token_urlsafe(6)
-    while crud.get_link_by_short_code(db, short_code):
-        short_code = secrets.token_urlsafe(6)
-
-    db_link = models.Link(
-        original_url=data.url,
-        short_code=short_code,
-        owner_id=None,
-        expires_at=datetime.utcnow() + timedelta(days=7),
-    )
-    db.add(db_link)
-    db.commit()
-
-    return {"short_code": short_code}
-
-
-# ── Public stats ──────────────────────────────────────────────────────────────
-
-@router.get("/public/stats")
-def get_public_stats(db: Session = Depends(get_db)):
-    """Returns total link and click counts for public display. No auth required."""
-    return {
-        "total_links":  crud.get_link_count(db),
-        "total_clicks": crud.get_click_count(db),
-    }
 

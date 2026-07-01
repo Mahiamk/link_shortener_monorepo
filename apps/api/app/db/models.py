@@ -24,14 +24,14 @@ class Click(Base):
     ip_address = Column(String(100), nullable=True)  # IPv6 compatible
     link = relationship("Link", back_populates="clicks")
     country = Column(String(100), nullable=True)
-    referrer = Column(String(255), nullable=True)
+    referrer = Column(Text, nullable=True)
     browser = Column(String(100), nullable=True)
     device_type = Column(String(100), nullable=True)
 
 class Link(Base):
     __tablename__ = "links"
     id = Column(Integer, primary_key=True, index=True)
-    original_url = Column(String(255), nullable=False)
+    original_url = Column(Text, nullable=False)
     short_code = Column(String(255), unique=True, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     # Foreign key: link belongs to a user

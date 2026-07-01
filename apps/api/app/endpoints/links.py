@@ -74,6 +74,11 @@ async def public_shorten_link(
     db: Session = Depends(get_db),
 ):
     """Shorten a URL without authentication. Rate-limited to 10/hour per IP."""
+    if len(data.url) > 8192:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="URL is too long (max 8192 characters).",
+        )
     try:
         parsed = urlparse(data.url)
         if parsed.scheme not in ("http", "https") or not parsed.netloc:

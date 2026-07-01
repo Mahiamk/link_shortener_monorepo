@@ -2,27 +2,33 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import NullPool
 from dotenv import load_dotenv
 
 load_dotenv()
-
-# Get DB URL from environment variable, with a default for docker-compose
 
 SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
 
 if not SQLALCHEMY_DATABASE_URL:
     raise ValueError("DATABASE_URL environment variable is not set")
-  
+
 if SQLALCHEMY_DATABASE_URL.startswith("mysql://"):
     SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace(
         "mysql://", "mysql+pymysql://", 1
     )
 
+# Strip ?ssl-mode= query param — PyMySQL doesn't support this URL param
+if "?" in SQLALCHEMY_DATABASE_URL:
+    base_url, _ = SQLALCHEMY_DATABASE_URL.split("?", 1)
+    SQLALCHEMY_DATABASE_URL = base_url
+
+# NullPool: no persistent pool — each request opens/closes its own connection.
+# This is correct for serverless environments (Vercel) where each invocation
+# is a separate process and a pool would exhaust the DB connection limit.
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
-    pool_size=10,
-    max_overflow=20,
-    pool_pre_ping=True,
+    poolclass=NullPool,
+    connect_args={"connect_timeout": 8, "ssl": {"verify_cert": False}},
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

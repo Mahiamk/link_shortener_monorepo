@@ -16,14 +16,19 @@ from app.db.models import User
 from app.core.config import settings
 from app.endpoints import auth, links, admin, analysis, redirect, contact
 
-#create all tables
-Base.metadata.create_all(bind=engine)
-
 app = FastAPI(
     title="Link Shortener API",
     description="API for managing link shortener",
     version="1.0.0"
 )
+
+@app.on_event("startup")
+async def startup():
+    try:
+        Base.metadata.create_all(bind=engine)
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"DB create_all failed (tables may already exist): {e}")
 
 app.state.limiter = limiter
 

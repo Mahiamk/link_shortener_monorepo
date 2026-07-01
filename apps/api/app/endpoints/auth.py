@@ -1,6 +1,7 @@
 import json
 import uuid
 import os
+import asyncio
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
@@ -95,8 +96,13 @@ async def login_for_access_token(
     'form_data' will contain a 'username' (which is our email) and 'password'.
     """
     user = crud.get_user_by_email(db, email=form_data.username)
-    
-    if not user or not security.verify_password(form_data.password, user.hashed_password):
+
+    loop = asyncio.get_event_loop()
+    password_valid = user and await loop.run_in_executor(
+        None, security.verify_password, form_data.password, user.hashed_password
+    )
+
+    if not user or not password_valid:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
@@ -127,23 +133,23 @@ async def read_users_me(current_user: models.User = Depends(get_current_user)):
 
 # --- INITIALIZE FIREBASE ADMIN SDK ---
 if not firebase_admin._apps:
-    # 1. Get the JSON string from the environment variable
     firebase_json = os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON")
+    credential_file = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
 
-    if firebase_json:
-        try:
-            # 2. Parse the string into a Python dictionary
+    try:
+        if firebase_json:
             service_account_info = json.loads(firebase_json)
-            
-            # 3. Create credentials from the dictionary
             cred = credentials.Certificate(service_account_info)
             firebase_admin.initialize_app(cred)
-            print("Firebase Admin SDK initialized successfully from Environment Variable.")
-            
-        except Exception as e:
-            print(f"Error initializing Firebase: {e}")
-    else:
-        print("WARNING: 'FIREBASE_SERVICE_ACCOUNT_JSON' environment variable not found.")
+            print("Firebase Admin SDK initialized from FIREBASE_SERVICE_ACCOUNT_JSON.")
+        elif credential_file:
+            cred = credentials.Certificate(credential_file)
+            firebase_admin.initialize_app(cred)
+            print("Firebase Admin SDK initialized from GOOGLE_APPLICATION_CREDENTIALS.")
+        else:
+            print("WARNING: No Firebase credentials found. Google login will not work.")
+    except Exception as e:
+        print(f"Error initializing Firebase Admin SDK: {e}")
 
 class FirebaseToken(BaseModel):
     token: str
@@ -178,19 +184,24 @@ async def login_or_register_with_google(
 
         if not user:
             print(f"User not found. Creating new user for: {email}")
-            random_password = str(uuid.uuid4())  
-          
-            user_to_create = UserCreate(
-                email=email,
-                password=random_password)
-            user = create_user(db, user=user_to_create) 
+            random_password = str(uuid.uuid4())
+            user_to_create = UserCreate(email=email, password=random_password)
+            user = create_user(db, user=user_to_create)
+            user.is_active = True
+            db.commit()
+            db.refresh(user)
             background_tasks.add_task(
-                send_welcome_email, 
-                to_email=email, 
-                name=email.split("@")[0]  
+                send_welcome_email,
+                to_email=email,
+                name=email.split("@")[0]
             )
         else:
             print(f"User found: {email}")
+            if not user.is_active:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="This account has been deactivated."
+                )
 
         app_access_token = create_access_token(
             data={"sub": user.email, "id": user.id} 

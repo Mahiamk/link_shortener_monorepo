@@ -37,6 +37,7 @@ export default function AdminUsersPage() {
       setError("Failed to fetch users. You may not have permission.")
       if (String(err).includes('401') || String(err).includes('credentials')) {
         localStorage.removeItem('token'); localStorage.removeItem('userEmail');
+        sessionStorage.removeItem('adminVerified');
         router.push('/auth/login');
       }
     } finally {

@@ -275,8 +275,27 @@ export const adminDeleteLink = (
   );
 };
 
+export const getPublicStats = async (): Promise<{ total_links: number; total_clicks: number }> => {
+  const response = await fetch(`${API_URL}/links/public/stats`)
+  if (!response.ok) throw new Error('Failed to fetch stats')
+  return response.json()
+}
+
+export const publicShortenUrl = async (url: string): Promise<{ short_code: string }> => {
+  const response = await fetch(`${API_URL}/links/public/shorten`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url }),
+  })
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}))
+    throw new Error(err.detail || 'Failed to shorten URL. Try again.')
+  }
+  return response.json()
+}
+
 export async function loginOrRegisterWithGoogle(firebaseToken: string) {
-  const response = await fetch(`${API_URL}/auth/google/`, {
+  const response = await fetch(`${API_URL}/auth/google`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

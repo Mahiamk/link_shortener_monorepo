@@ -8,7 +8,7 @@ import jwt
 # --- Password Hashing ---
 
 # We use bcrypt as the hashing algorithm
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto", bcrypt__rounds=10)
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verifies a plain-text password against a hashed one."""

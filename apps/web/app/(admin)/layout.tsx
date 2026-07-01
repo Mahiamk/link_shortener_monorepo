@@ -20,13 +20,21 @@ export default function AdminLayout({
     const checkAdminStatus = async () => {
       const token = localStorage.getItem('token')
       if (!token) {
-        router.push('/login') 
+        router.push('/login')
+        return
+      }
+
+      // Skip the API call if already verified in this session
+      if (sessionStorage.getItem('adminVerified') === 'true') {
+        setIsAdmin(true)
+        setLoading(false)
         return
       }
 
       try {
         const user: User = await getUserProfile(token)
         if (user && user.is_superuser) {
+          sessionStorage.setItem('adminVerified', 'true')
           setIsAdmin(true)
         } else {
           router.push('/dashboard')

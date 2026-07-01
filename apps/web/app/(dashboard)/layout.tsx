@@ -11,8 +11,8 @@ import {
   LinkIcon as LinkOutlineIcon,
   ChartBarIcon,
   ArrowRightStartOnRectangleIcon,
-  UserCircleIcon,
   ShieldCheckIcon,
+  ChevronDownIcon,
 } from '@heroicons/react/24/outline'
 import { getUserProfile, User } from '../../lib/api'
 
@@ -26,82 +26,74 @@ function classNames(...classes: (string | boolean | undefined)[]) {
   return classes.filter(Boolean).join(' ')
 }
 
-function UserMenu({ email, isSuperuser, onLogout }: { email: string, isSuperuser: boolean, onLogout: () => void }) {
-  const [isOpen, setIsOpen] = useState(false)
+function getInitials(email: string) {
+  return email.slice(0, 2).toUpperCase()
+}
 
+function UserMenu({ email, isSuperuser, onLogout }: { email: string; isSuperuser: boolean; onLogout: () => void }) {
+  const [isOpen, setIsOpen] = useState(false)
   return (
-    <div className="relative">
+    <div className="relative border-t border-white/10 p-4">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 text-gray-600 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500"
+        className="flex w-full items-center gap-3 rounded-xl p-2 text-left hover:bg-white/5 transition-colors"
       >
-        <UserCircleIcon className="h-6 w-6" />
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-violet-500 to-indigo-600 text-xs font-bold text-white shadow-lg">
+          {getInitials(email)}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium text-white">{email.split('@')[0]}</p>
+          <p className="truncate text-xs text-slate-400">{email}</p>
+        </div>
+        <ChevronDownIcon className={classNames('h-4 w-4 shrink-0 text-slate-400 transition-transform', isOpen ? 'rotate-180' : '')} />
       </button>
 
       {isOpen && (
         <div
-          className="absolute right-0 mt-2 w-60 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 z-20"
+          className="absolute bottom-full left-4 right-4 mb-2 rounded-xl bg-slate-800 shadow-2xl ring-1 ring-white/10 z-20 overflow-hidden"
           onMouseLeave={() => setIsOpen(false)}
         >
-          <div className="py-1">
-            <div className="px-4 py-3 border-b border-gray-100">
-              <p className="text-sm text-gray-500">Signed in as</p>
-              <p className="truncate text-sm font-medium text-gray-900">{email}</p>
-            </div>
-            {isSuperuser && (
-              <Link
-                href="/admin"
-                className="group flex w-full items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-gray-100"
-                onClick={() => setIsOpen(false)}
-              >
-                <ShieldCheckIcon className="h-5 w-5 text-gray-500 group-hover:text-gray-600" />
-                Admin Panel
-              </Link>
-            )}
-            <button
-              onClick={() => { onLogout(); setIsOpen(false); }}
-              className="group flex w-full items-center gap-2 px-4 py-3 text-sm text-gray-600 hover:bg-gray-100"
+          {isSuperuser && (
+            <Link
+              href="/admin"
+              className="flex items-center gap-2.5 px-4 py-3 text-sm text-slate-300 hover:bg-white/5 hover:text-white transition-colors"
+              onClick={() => setIsOpen(false)}
             >
-              <ArrowRightStartOnRectangleIcon className="h-5 w-5 text-gray-500 group-hover:text-gray-700" />
-              Logout
-            </button>
-          </div>
+              <ShieldCheckIcon className="h-4 w-4 text-violet-400" />
+              Admin Panel
+            </Link>
+          )}
+          <button
+            onClick={() => { onLogout(); setIsOpen(false) }}
+            className="flex w-full items-center gap-2.5 px-4 py-3 text-sm text-slate-300 hover:bg-white/5 hover:text-white transition-colors"
+          >
+            <ArrowRightStartOnRectangleIcon className="h-4 w-4 text-rose-400" />
+            Sign out
+          </button>
         </div>
       )}
     </div>
   )
 }
 
-
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
-  const [sidebarOpen, setSidebarOpen] = useState(false) // State to control sidebar
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [user, setUser] = useState<User | null>(null)
   const [loadingUser, setLoadingUser] = useState(true)
 
   useEffect(() => {
     const fetchUser = async () => {
-      // ... (user fetching logic remains the same) ...
-       const token = localStorage.getItem('token')
-      if (!token) {
-        router.push('/login')
-        return
-      }
+      const token = localStorage.getItem('token')
+      if (!token) { router.push('/login'); return }
       try {
         const profile = await getUserProfile(token)
         setUser(profile)
-        if (profile?.is_superuser) {
-           if (!pathname.startsWith('/admin')) {
-              router.push('/admin');
-           }
+        if (profile?.is_superuser && !pathname.startsWith('/admin')) {
+          router.push('/admin')
         }
-      } catch (error) {
-        console.error("Failed to fetch user profile", error)
+      } catch {
         localStorage.removeItem('token')
         localStorage.removeItem('userEmail')
         router.push('/login')
@@ -115,127 +107,133 @@ export default function DashboardLayout({
   const handleLogout = () => {
     localStorage.removeItem('token')
     localStorage.removeItem('userEmail')
+    sessionStorage.removeItem('adminVerified')
     router.push('/')
   }
 
   if (loadingUser) {
-    return <div className="flex h-screen items-center justify-center">Loading user...</div>
+    return (
+      <div className="flex h-screen items-center justify-center bg-slate-950">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-violet-500 border-t-transparent" />
+          <p className="text-sm text-slate-400">Loading...</p>
+        </div>
+      </div>
+    )
   }
 
-  if (!user || (user.is_superuser && !pathname.startsWith('/admin'))) {
-    return null;
-  }
+  if (!user || (user.is_superuser && !pathname.startsWith('/admin'))) return null
 
-  // Define sidebar content separately for reuse
   const sidebarContent = (
-    <>
-      <div className="flex h-16 shrink-0 items-center border-b border-gray-200 px-6 bg-white">
-        <Link 
-        href="/dashboard"className="flex items-center gap-2">
-           <svg className="h-8 w-auto text-gray-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
-          </svg>
-          <span className="text-lg font-semibold text-gray-600">LinkShorty</span>
+    <div className="flex h-full flex-col bg-slate-950">
+      {/* Logo */}
+      <div className="flex h-16 shrink-0 items-center px-6">
+        <Link href="/dashboard" className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-linear-to-br from-violet-500 to-indigo-600 shadow-lg">
+            <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
+            </svg>
+          </div>
+          <span className="text-base font-bold text-white tracking-tight">LinkShorty</span>
         </Link>
       </div>
-      <nav className="flex flex-1 flex-col overflow-y-auto bg-white p-4">
-        <ul role="list" className="flex flex-1 flex-col gap-y-7">
-          <li>
-            <ul role="list" className="-mx-2 space-y-1">
-              {navigation.map((item) => {
-                 const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
-                return (
-                <li key={item.name}>
-                  {/* ✅ --- ADD onClick TO CLOSE SIDEBAR --- */}
-                  <Link
-                    href={item.href}
-                    onClick={() => setSidebarOpen(false)} // <-- ADD THIS LINE
-                    className={classNames(
-                      isActive
-                        ? 'bg-gray-50 text-gray-600'
-                        : 'text-gray-700 hover:text-gray-600 hover:bg-gray-50',
-                      'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold'
-                    )}
-                  >
-                    <item.icon
-                      className={classNames(
-                        isActive ? 'text-gray-600' : 'text-gray-400 group-hover:text-gray-600',
-                        'h-6 w-6 shrink-0'
-                      )}
-                      aria-hidden="true"
-                    />
-                    {item.name}
-                  </Link>
-                  {/* ✅ --- END ADDITION --- */}
-                </li>
-              )})}
-            </ul>
-          </li>
-          <li className="mt-auto -mx-6"></li>
+
+      {/* Nav */}
+      <nav className="flex-1 overflow-y-auto px-3 py-4">
+        <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-widest text-slate-500">Menu</p>
+        <ul className="space-y-1">
+          {navigation.map((item) => {
+            const isActive = item.href === '/dashboard'
+              ? pathname === item.href
+              : pathname.startsWith(item.href)
+            return (
+              <li key={item.name}>
+                <Link
+                  href={item.href}
+                  onClick={() => setSidebarOpen(false)}
+                  className={classNames(
+                    'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all',
+                    isActive
+                      ? 'bg-violet-600/20 text-violet-300 shadow-sm ring-1 ring-violet-500/20'
+                      : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
+                  )}
+                >
+                  <item.icon className={classNames('h-5 w-5 shrink-0 transition-colors', isActive ? 'text-violet-400' : 'text-slate-500 group-hover:text-slate-300')} />
+                  {item.name}
+                  {isActive && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-violet-400" />}
+                </Link>
+              </li>
+            )
+          })}
         </ul>
       </nav>
-    </>
-  );
+
+      {/* User menu at bottom */}
+      {user && <UserMenu email={user.email} isSuperuser={user.is_superuser} onLogout={handleLogout} />}
+    </div>
+  )
 
   return (
-    <>
-      <div>
-        {/* Mobile Sidebar */}
-        <Transition show={sidebarOpen} as={Fragment}>
-          <Dialog className="relative z-50 lg:hidden" onClose={setSidebarOpen}>
-            <TransitionChild as={Fragment} /* ... */ >
-              <div className="fixed inset-0 bg-gray-900/80" />
+    <div>
+      {/* Mobile Sidebar */}
+      <Transition show={sidebarOpen} as={Fragment}>
+        <Dialog className="relative z-50 lg:hidden" onClose={setSidebarOpen}>
+          <TransitionChild
+            as={Fragment}
+            enter="transition-opacity ease-linear duration-200"
+            enterFrom="opacity-0" enterTo="opacity-100"
+            leave="transition-opacity ease-linear duration-200"
+            leaveFrom="opacity-100" leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
+          </TransitionChild>
+          <div className="fixed inset-0 flex">
+            <TransitionChild
+              as={Fragment}
+              enter="transition ease-in-out duration-300 transform"
+              enterFrom="-translate-x-full" enterTo="translate-x-0"
+              leave="transition ease-in-out duration-300 transform"
+              leaveFrom="translate-x-0" leaveTo="-translate-x-full"
+            >
+              <DialogPanel className="relative mr-16 flex w-full max-w-xs flex-1">
+                <div className="absolute left-full top-0 flex w-16 justify-center pt-5">
+                  <button type="button" className="-m-2.5 p-2.5" onClick={() => setSidebarOpen(false)}>
+                    <XMarkIcon className="h-6 w-6 text-white" />
+                  </button>
+                </div>
+                <div className="flex grow flex-col overflow-y-auto">
+                  {sidebarContent}
+                </div>
+              </DialogPanel>
             </TransitionChild>
-            <div className="fixed inset-0 flex">
-              <TransitionChild as={Fragment} /* ... */ >
-                <DialogPanel className="relative mr-16 flex w-full max-w-xs flex-1">
-                  <TransitionChild as={Fragment} /* ... */ >
-                    <div className="absolute left-full top-0 flex w-16 justify-center pt-5">
-                      <button type="button" className="-m-2.5 p-2.5" onClick={() => setSidebarOpen(false)}>
-                        <XMarkIcon className="h-6 w-6 text-white" aria-hidden="true" />
-                      </button>
-                    </div>
-                  </TransitionChild>
-                  {/* Sidebar content uses the definition which now includes the onClick */}
-                  <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-white pb-4 ring-1 ring-white/10">
-                    {sidebarContent}
-                  </div>
-                </DialogPanel>
-              </TransitionChild>
-            </div>
-          </Dialog>
-        </Transition>
+          </div>
+        </Dialog>
+      </Transition>
 
-        {/* Static Sidebar Desktop */}
-        <div className="hidden lg:fixed lg:inset-y-0 lg:z-40 lg:flex lg:w-72 lg:flex-col lg:border-r lg:border-gray-200 lg:overflow-hidden">
-          {sidebarContent}
-        </div>
+      {/* Static Sidebar Desktop */}
+      <div className="hidden lg:fixed lg:inset-y-0 lg:z-40 lg:flex lg:w-64 lg:flex-col">
+        {sidebarContent}
+      </div>
 
-        {/* Main Area */}
-        <div className="lg:pl-72">
-          {/* Header */}
-          <div className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white/75 px-4 shadow-sm backdrop-blur-sm sm:gap-x-6 sm:px-6 lg:px-8">
-            <button type="button" className="-m-2.5 p-2.5 text-gray-700 lg:hidden" onClick={() => setSidebarOpen(true)}>
-              <Bars3Icon className="h-6 w-6" aria-hidden="true" />
-            </button>
-            <div className="h-6 w-px bg-gray-900/10 lg:hidden" aria-hidden="true" />
-            <div className="flex flex-1 justify-end gap-x-4 self-stretch lg:gap-x-6">
-              <div className="flex items-center gap-x-4 lg:gap-x-6">
-                    <UserMenu
-                        email={user.email}
-                        isSuperuser={user.is_superuser}
-                        onLogout={handleLogout}
-                    />
-              </div>
+      {/* Main Area */}
+      <div className="lg:pl-64">
+        {/* Mobile top bar */}
+        <div className="sticky top-0 z-30 flex h-14 items-center gap-x-4 border-b border-gray-200 bg-white/80 px-4 shadow-sm backdrop-blur-md sm:px-6 lg:hidden">
+          <button type="button" className="-m-2.5 p-2.5 text-gray-700" onClick={() => setSidebarOpen(true)}>
+            <Bars3Icon className="h-5 w-5" />
+          </button>
+          <div className="flex flex-1 items-center justify-between">
+            <span className="text-sm font-semibold text-gray-900">LinkShorty</span>
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-linear-to-br from-violet-500 to-indigo-600 text-xs font-bold text-white">
+              {user && getInitials(user.email)}
             </div>
           </div>
-
-          {/* Page Content */}
-          <main className="py-10">
-            <div className="px-4 sm:px-6 lg:px-8 h-[calc(100vh-64px)] overflow-y-auto">{children}</div>
-          </main>
         </div>
+
+        <main className="min-h-screen bg-gray-50/60 py-6 lg:py-8">
+          <div className="px-4 sm:px-6 lg:px-8">{children}</div>
+        </main>
       </div>
-    </>
+    </div>
   )
 }

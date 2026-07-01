@@ -1,16 +1,18 @@
 import secrets
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from jose import JWTError, jwt
 from pydantic import BaseModel
 from datetime import datetime, timedelta
+from urllib.parse import urlparse
 
 # Import your helpers
 from app import crud
 from app.db import schemas, models, database
 from app.core.security import oauth2_scheme
 from app.core.config import settings
+from app.core.limiter import limiter
 
 router = APIRouter()
 
@@ -209,4 +211,58 @@ def delete_current_user(
     db.delete(current_user)
     db.commit()
     return
+
+
+# ── Public (unauthenticated) link shortening ──────────────────────────────────
+
+class PublicShortenRequest(BaseModel):
+    url: str
+
+
+@router.post("/public/shorten", status_code=status.HTTP_201_CREATED)
+@limiter.limit("10/hour")
+async def public_shorten_link(
+    request: Request,
+    data: PublicShortenRequest,
+    db: Session = Depends(get_db),
+):
+    """
+    Shorten a URL without authentication. Rate-limited to 10/hour per IP.
+    Resulting links expire after 7 days and have no owner.
+    """
+    try:
+        parsed = urlparse(data.url)
+        if parsed.scheme not in ("http", "https") or not parsed.netloc:
+            raise ValueError
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid URL. Must start with http:// or https://",
+        )
+
+    short_code = secrets.token_urlsafe(6)
+    while crud.get_link_by_short_code(db, short_code):
+        short_code = secrets.token_urlsafe(6)
+
+    db_link = models.Link(
+        original_url=data.url,
+        short_code=short_code,
+        owner_id=None,
+        expires_at=datetime.utcnow() + timedelta(days=7),
+    )
+    db.add(db_link)
+    db.commit()
+
+    return {"short_code": short_code}
+
+
+# ── Public stats ──────────────────────────────────────────────────────────────
+
+@router.get("/public/stats")
+def get_public_stats(db: Session = Depends(get_db)):
+    """Returns total link and click counts for public display. No auth required."""
+    return {
+        "total_links":  crud.get_link_count(db),
+        "total_clicks": crud.get_click_count(db),
+    }
 

@@ -25,3 +25,5 @@ Link Analytics History
 Clicks by Referrer
 Clicks by Browser
 Clicks by Device Type 
+
+NEXT_PUBLIC_BASE_URL

@@ -1,4 +1,5 @@
 import os
+import ssl as ssl_lib
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -22,13 +23,19 @@ if "?" in SQLALCHEMY_DATABASE_URL:
     base_url, _ = SQLALCHEMY_DATABASE_URL.split("?", 1)
     SQLALCHEMY_DATABASE_URL = base_url
 
+# SSL context: connect over TLS but skip server cert verification since we
+# don't have Aiven's CA cert bundled in the serverless environment.
+_ssl_ctx = ssl_lib.create_default_context()
+_ssl_ctx.check_hostname = False
+_ssl_ctx.verify_mode = ssl_lib.CERT_NONE
+
 # NullPool: no persistent pool — each request opens/closes its own connection.
-# This is correct for serverless environments (Vercel) where each invocation
-# is a separate process and a pool would exhaust the DB connection limit.
+# Required for serverless (Vercel) where multiple cold-starts would otherwise
+# each maintain a pool and exhaust the DB connection limit.
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
     poolclass=NullPool,
-    connect_args={"connect_timeout": 8, "ssl": {"verify_cert": False}},
+    connect_args={"connect_timeout": 8, "ssl": _ssl_ctx},
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

@@ -76,7 +76,12 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
         
 @app.get("/")
 async def root():
-    return {"message": "Link Shortener API is running."}
+    from app.db.database import _dns_cache, _dns_prefetch_error
+    return {
+        "message": "Link Shortener API is running.",
+        "dns_prefetched": bool(_dns_cache),
+        "dns_error": _dns_prefetch_error or None,
+    }
   
 @app.get("/health")
 async def health_check():

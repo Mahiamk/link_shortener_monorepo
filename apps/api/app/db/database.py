@@ -1,5 +1,7 @@
 import os
-import certifi
+import socket as _socket
+import ssl as _ssl_module
+from urllib.parse import urlparse as _urlparse
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -14,27 +16,47 @@ if not SQLALCHEMY_DATABASE_URL:
     raise ValueError("DATABASE_URL environment variable is not set")
 
 if SQLALCHEMY_DATABASE_URL.startswith("mysql://"):
-    SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace(
-        "mysql://", "mysql+pymysql://", 1
-    )
+    SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace("mysql://", "mysql+pymysql://", 1)
 
-# Strip ?ssl-mode= query param — PyMySQL doesn't support this URL param
 if "?" in SQLALCHEMY_DATABASE_URL:
     base_url, _ = SQLALCHEMY_DATABASE_URL.split("?", 1)
     SQLALCHEMY_DATABASE_URL = base_url
 
-# Use certifi's CA bundle so PyMySQL can verify Aiven's TLS cert.
-# Passing ssl={"ca": path} is the stable PyMySQL way across versions —
-# avoids the ssl.SSLContext EBUSY issue seen on Python 3.12 + Vercel.
-_ssl_args = {"ca": certifi.where()}
+# On Vercel/Lambda Python 3.12, socket.getaddrinfo called from worker threads
+# (anyio thread pool) fails with EBUSY. Fix: resolve DNS once in the main thread
+# at import time, cache the result, and monkey-patch getaddrinfo so worker threads
+# hit the cache instead of calling the OS resolver.
+_dns_cache: dict = {}
+_original_getaddrinfo = _socket.getaddrinfo
 
-# NullPool: no persistent pool — each request opens/closes its own connection.
-# Required for serverless (Vercel) where multiple cold-starts would otherwise
-# each maintain a pool and exhaust the DB connection limit.
+def _cached_getaddrinfo(host, port, family=0, socktype=0, proto=0, flags=0):
+    cached = _dns_cache.get((host, port))
+    if cached is not None:
+        return cached
+    return _original_getaddrinfo(host, port, family, socktype, proto, flags)
+
+_dns_prefetch_error: str = ""
+try:
+    _parsed = _urlparse(SQLALCHEMY_DATABASE_URL)
+    _db_host = _parsed.hostname
+    _db_port = _parsed.port or 3306
+    _resolved = _original_getaddrinfo(_db_host, _db_port, _socket.AF_INET, _socket.SOCK_STREAM)
+    _dns_cache[(_db_host, _db_port)] = _resolved
+    _socket.getaddrinfo = _cached_getaddrinfo
+except Exception as _e:
+    _dns_prefetch_error = str(_e)
+
+# Create SSLContext in the main thread — creating ssl.SSLContext in Lambda worker
+# threads on Python 3.12 can also trigger EBUSY. Reusing a main-thread context
+# is safe; SSLContext objects are thread-safe.
+_ssl_ctx = _ssl_module.SSLContext(_ssl_module.PROTOCOL_TLS_CLIENT)
+_ssl_ctx.check_hostname = False
+_ssl_ctx.verify_mode = _ssl_module.CERT_NONE
+
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
     poolclass=NullPool,
-    connect_args={"connect_timeout": 8, "ssl": _ssl_args},
+    connect_args={"connect_timeout": 8, "ssl": _ssl_ctx},
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -42,7 +64,6 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 def get_db():
-    """Dependency to get database session"""
     db = SessionLocal()
     try:
         yield db

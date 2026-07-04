@@ -59,17 +59,17 @@ function classNames(...classes: (string | boolean | undefined)[]) {
 
 export function Pricing() {
   return (
-    <div className="bg-white py-24 sm:py-32">
+    <div className="bg-[#c3bfc7] py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="mx-auto max-w-4xl text-center">
-          <h2 className="text-base font-semibold leading-7 text-gray-600">
+          <h2 className="text-base font-semibold leading-7 text-[#160824]/65">
             Pricing
           </h2>
-          <p className="mt-2 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
+          <p className="mt-2 text-4xl font-bold tracking-tight text-[#160824] sm:text-5xl">
             Start Free, Scale Smart.
           </p>
         </div>
-        <p className="mx-auto mt-6 max-w-2xl text-center text-lg leading-8 text-gray-900">
+        <p className="mx-auto mt-6 max-w-2xl text-center text-lg leading-8 text-[#160824]">
           We offer a powerful{" "}
           <span className="font-semibold px-1 py-1 rounded-xl bg-gradient-to-r from-gray-400 via-gray-300 to-gray-400 text-gray-800 shadow-md shadow-gray-300/40 backdrop-blur">
             Free Starter
@@ -83,22 +83,22 @@ export function Pricing() {
             <div
               key={tier.id}
               className={classNames(
-                tier.highlight ? 'ring-2 ring-gray-600' : 'ring-1 ring-gray-200',
-                'rounded-3xl p-8 shadow-xl transition hover:shadow-2xl bg-white flex flex-col',
+                tier.highlight ? 'ring-2 ring-[#223030]' : 'ring-1 ring-[#160824]/20',
+                'rounded-3xl p-8 shadow-xl transition hover:shadow-2xl bg-white/70 flex flex-col',
               )}
             >
               <h3
                 id={tier.id}
                 className={classNames(
-                  tier.highlight ? 'text-gray-600' : 'text-gray-900',
+                  tier.highlight ? 'text-[#223030]' : 'text-[#160824]',
                   'text-lg font-semibold leading-8',
                 )}
               >
                 {tier.name}
               </h3>
-              <p className="mt-4 text-sm leading-6 text-gray-600">{tier.description}</p>
+              <p className="mt-4 text-sm leading-6 text-[#160824]/60">{tier.description}</p>
               <p className="mt-6 flex items-baseline gap-x-1">
-                <span className="text-4xl font-bold tracking-tight text-gray-900">
+                <span className="text-4xl font-bold tracking-tight text-[#160824]">
                   {tier.price.monthly}
                 </span>
                 {tier.price.monthly !== 'Free' && tier.price.monthly !== 'Custom' ? (
@@ -110,17 +110,17 @@ export function Pricing() {
                 aria-describedby={tier.id}
                 className={classNames(
                   tier.highlight
-                    ? 'bg-black text-white shadow-sm hover:bg-gray-800 focus-visible:outline-gray-600'
-                    : 'text-gray-900 ring-1 ring-inset ring-gray-200 hover:ring-gray-300 focus-visible:outline-gray-900',
+                    ? 'bg-[#223030] text-white shadow-sm hover:bg-[#2e4040] focus-visible:outline-[#223030]'
+                    : 'text-[#160824] ring-1 ring-inset ring-[#160824]/20 hover:ring-[#160824]/30 focus-visible:outline-[#160824]',
                   'mt-6 block rounded-md py-2 px-3 text-center text-sm font-semibold leading-6 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50',
                 )}
               >
                 {tier.id === 'tier-free' ? 'Get Started for Free' : 'Learn More'}
               </Link>
-              <ul role="list" className="mt-8 space-y-3 text-sm leading-6 text-gray-600 flex-grow">
+              <ul role="list" className="mt-8 space-y-3 text-sm leading-6 text-[#160824]/60 grow">
                 {tier.features.map((feature) => (
                   <li key={feature} className="flex gap-x-3">
-                    <CheckIcon className="h-6 w-5 flex-none text-gray-600" aria-hidden="true" />
+                    <CheckIcon className="h-6 w-5 shrink-0 text-[#223030]" aria-hidden="true" />
                     {feature}
                   </li>
                 ))}

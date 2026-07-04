@@ -82,7 +82,7 @@ export default function Homepage() {
   const toggleGate = (type: 'qr' | 'analytics') => setGate(g => g === type ? null : type)
 
   return (
-    <div className="bg-slate-950">
+    <div className="bg-[#c3bfc7]">
       <Header />
 
       {/* ── Hero ──────────────────────────────────────────────────────── */}
@@ -93,7 +93,7 @@ export default function Homepage() {
           aria-hidden
           className="pointer-events-none absolute inset-0 -z-10"
           style={{
-            backgroundImage: 'radial-gradient(rgba(255,255,255,0.055) 1px, transparent 1px)',
+            backgroundImage: 'radial-gradient(rgba(22,8,36,0.07) 1px, transparent 1px)',
             backgroundSize: '28px 28px',
           }}
         />
@@ -106,22 +106,22 @@ export default function Homepage() {
         <div className="mx-auto max-w-4xl px-6 pb-24 pt-36 text-center lg:pt-48">
 
           {/* Badge pill */}
-          <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-violet-500/25 bg-violet-500/10 px-4 py-1.5 text-sm font-medium text-violet-300">
+          <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-[#223030]/25 bg-[#223030]/10 px-4 py-1.5 text-sm font-medium text-[#223030]">
             <Sparkles className="h-3.5 w-3.5" />
             Free · Instant · No sign-up needed to try
           </div>
 
           {/* Headline */}
-          <h1 className="text-5xl font-extrabold leading-[1.1] tracking-tight text-white sm:text-6xl lg:text-7xl">
+          <h1 className="text-5xl font-extrabold leading-[1.1] tracking-tight text-[#160824] sm:text-6xl lg:text-7xl">
             Shorten. Share.
             <br />
-            <span className="bg-linear-to-r from-violet-400 via-fuchsia-400 to-cyan-400 bg-clip-text text-transparent">
+            <span className="bg-linear-to-r from-violet-700 via-fuchsia-700 to-indigo-700 bg-clip-text text-transparent">
               Track Everything.
             </span>
           </h1>
 
           {/* Subheadline */}
-          <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-slate-400 sm:text-xl">
+          <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-[#160824]/65 sm:text-xl">
             Turn any long URL into a powerful short link in seconds —
             no account needed. Unlock analytics, custom QR codes, and more when you sign up free.
           </p>
@@ -140,13 +140,13 @@ export default function Homepage() {
                       onChange={(e) => setUrl(e.target.value)}
                       placeholder="Paste your long URL here…"
                       required
-                      className="w-full rounded-2xl border border-white/10 bg-white/6 py-4 pl-11 pr-4 text-white placeholder:text-slate-500 backdrop-blur-sm transition-all focus:border-violet-500/60 focus:bg-white/9 focus:outline-none focus:ring-2 focus:ring-violet-500/25"
+                      className="w-full rounded-2xl border border-[#160824]/15 bg-white/50 py-4 pl-11 pr-4 text-[#160824] placeholder:text-[#160824]/40 backdrop-blur-sm transition-all focus:border-[#223030]/40 focus:bg-white/70 focus:outline-none focus:ring-2 focus:ring-[#223030]/20"
                     />
                   </div>
                   <button
                     type="submit"
                     disabled={isLoading || !url.trim()}
-                    className="flex items-center justify-center gap-2 rounded-2xl bg-violet-600 px-7 py-4 text-sm font-semibold text-white shadow-lg shadow-violet-950/60 transition-all hover:bg-violet-500 hover:shadow-violet-900/60 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex items-center justify-center gap-2 rounded-2xl bg-[#223030] px-7 py-4 text-sm font-semibold text-white shadow-lg shadow-[#223030]/30 transition-all hover:bg-[#2e4040] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {isLoading
                       ? <Loader2 className="h-4 w-4 animate-spin" />
@@ -160,7 +160,7 @@ export default function Homepage() {
                 {/* Trust badges */}
                 <div className="mt-5 flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
                   {TRUST_BADGES.map(b => (
-                    <span key={b} className="flex items-center gap-1.5 text-xs text-slate-500">
+                    <span key={b} className="flex items-center gap-1.5 text-xs text-[#160824]/50">
                       <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
                       {b}
                     </span>
@@ -170,27 +170,27 @@ export default function Homepage() {
 
             ) : (
               /* Result card */
-              <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5 text-left backdrop-blur-sm">
+              <div className="overflow-hidden rounded-2xl border border-[#160824]/12 bg-white/60 text-left backdrop-blur-sm">
 
                 {/* Card header */}
-                <div className="flex items-center justify-between border-b border-white/10 px-5 py-3">
-                  <div className="flex items-center gap-2 text-sm font-semibold text-emerald-400">
+                <div className="flex items-center justify-between border-b border-[#160824]/10 px-5 py-3">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-emerald-600">
                     <CheckCircle2 className="h-4 w-4" />
                     Your link is ready!
                   </div>
-                  <button onClick={handleReset} className="text-slate-500 transition-colors hover:text-white">
+                  <button onClick={handleReset} className="text-[#160824]/40 transition-colors hover:text-[#160824]">
                     <X className="h-4 w-4" />
                   </button>
                 </div>
 
                 {/* Short URL row */}
                 <div className="flex items-center gap-3 px-5 py-4">
-                  <span className="flex-1 truncate font-mono text-sm font-semibold text-violet-300">
+                  <span className="flex-1 truncate font-mono text-sm font-semibold text-violet-700">
                     {displayUrl}
                   </span>
                   <button
                     onClick={handleCopy}
-                    className="flex shrink-0 items-center gap-1.5 rounded-xl border border-white/10 bg-white/7 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/12"
+                    className="flex shrink-0 items-center gap-1.5 rounded-xl border border-[#160824]/12 bg-white/70 px-4 py-2 text-sm font-medium text-[#160824] transition-colors hover:bg-white/90"
                   >
                     {copied
                       ? <CopyCheck className="h-4 w-4 text-emerald-400" />
@@ -200,17 +200,17 @@ export default function Homepage() {
                 </div>
 
                 {/* Action buttons */}
-                <div className="flex flex-wrap items-center gap-2 border-t border-white/10 px-5 py-4">
+                <div className="flex flex-wrap items-center gap-2 border-t border-[#160824]/10 px-5 py-4">
                   {/* QR gate */}
                   <button
                     onClick={() => toggleGate('qr')}
                     className={`flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition-all ${
                       gate === 'qr'
-                        ? 'border-violet-500/50 bg-violet-500/15 text-violet-300'
-                        : 'border-white/10 bg-white/5 text-slate-300 hover:border-violet-500/30 hover:text-white'
+                        ? 'border-[#223030]/40 bg-[#223030]/12 text-[#223030]'
+                        : 'border-[#160824]/12 bg-white/50 text-[#160824]/70 hover:border-[#223030]/30 hover:text-[#160824]'
                     }`}
                   >
-                    <Lock className="h-3.5 w-3.5 text-violet-400" />
+                    <Lock className="h-3.5 w-3.5 text-[#223030]/60" />
                     <QrCode className="h-4 w-4" />
                     QR Code
                   </button>
@@ -220,11 +220,11 @@ export default function Homepage() {
                     onClick={() => toggleGate('analytics')}
                     className={`flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition-all ${
                       gate === 'analytics'
-                        ? 'border-violet-500/50 bg-violet-500/15 text-violet-300'
-                        : 'border-white/10 bg-white/5 text-slate-300 hover:border-violet-500/30 hover:text-white'
+                        ? 'border-[#223030]/40 bg-[#223030]/12 text-[#223030]'
+                        : 'border-[#160824]/12 bg-white/50 text-[#160824]/70 hover:border-[#223030]/30 hover:text-[#160824]'
                     }`}
                   >
-                    <Lock className="h-3.5 w-3.5 text-violet-400" />
+                    <Lock className="h-3.5 w-3.5 text-[#223030]/60" />
                     <BarChart2 className="h-4 w-4" />
                     Analytics
                   </button>
@@ -233,7 +233,7 @@ export default function Homepage() {
 
                   <a
                     href="/signup"
-                    className="flex items-center gap-1.5 rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-violet-500"
+                    className="flex items-center gap-1.5 rounded-xl bg-[#223030] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#2e4040]"
                   >
                     Save this link <ArrowRight className="h-3.5 w-3.5" />
                   </a>
@@ -241,15 +241,15 @@ export default function Homepage() {
 
                 {/* Login-gate callout */}
                 {gate && (
-                  <div className="border-t border-violet-500/20 bg-violet-950/60 px-5 py-5">
+                  <div className="border-t border-[#223030]/15 bg-[#223030]/8 px-5 py-5">
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                       <div>
-                        <p className="text-sm font-semibold text-white">
+                        <p className="text-sm font-semibold text-[#160824]">
                           {gate === 'qr'
                             ? '🎨 Custom QR Codes require a free account'
                             : '📊 Link Analytics require a free account'}
                         </p>
-                        <p className="mt-1 text-xs leading-relaxed text-slate-400">
+                        <p className="mt-1 text-xs leading-relaxed text-[#160824]/60">
                           {gate === 'qr'
                             ? 'Generate branded QR codes with custom colors, download in HD, and embed your logo.'
                             : 'See real-time clicks, countries, devices, browsers, and referrers for every link you create.'}
@@ -258,13 +258,13 @@ export default function Homepage() {
                       <div className="flex shrink-0 items-center gap-2">
                         <a
                           href="/login"
-                          className="rounded-lg border border-white/10 px-3.5 py-2 text-xs font-medium text-slate-300 transition-colors hover:text-white"
+                          className="rounded-lg border border-[#160824]/15 px-3.5 py-2 text-xs font-medium text-[#160824]/70 transition-colors hover:text-[#160824]"
                         >
                           Log in
                         </a>
                         <a
                           href="/signup"
-                          className="rounded-lg bg-violet-600 px-3.5 py-2 text-xs font-semibold text-white transition-colors hover:bg-violet-500"
+                          className="rounded-lg bg-[#223030] px-3.5 py-2 text-xs font-semibold text-white transition-colors hover:bg-[#2e4040]"
                         >
                           Sign up free →
                         </a>
@@ -277,22 +277,22 @@ export default function Homepage() {
           </div>
 
           {/* Stats row */}
-          <div className="mx-auto mt-20 grid max-w-lg grid-cols-3 gap-6 border-t border-white/5 pt-12 sm:max-w-2xl sm:gap-12">
+          <div className="mx-auto mt-20 grid max-w-lg grid-cols-3 gap-6 border-t border-[#160824]/10 pt-12 sm:max-w-2xl sm:gap-12">
             <div>
-              <p className="text-3xl font-extrabold text-white sm:text-4xl">
+              <p className="text-3xl font-extrabold text-[#160824] sm:text-4xl">
                 {stats ? formatCount(stats.total_links) : '…'}
               </p>
-              <p className="mt-1 text-sm text-slate-500">Links shortened</p>
+              <p className="mt-1 text-sm text-[#160824]/50">Links shortened</p>
             </div>
             <div>
-              <p className="text-3xl font-extrabold text-white sm:text-4xl">
+              <p className="text-3xl font-extrabold text-[#160824] sm:text-4xl">
                 {stats ? formatCount(stats.total_clicks) : '…'}
               </p>
-              <p className="mt-1 text-sm text-slate-500">Clicks tracked</p>
+              <p className="mt-1 text-sm text-[#160824]/50">Clicks tracked</p>
             </div>
             <div>
-              <p className="text-3xl font-extrabold text-white sm:text-4xl">100%</p>
-              <p className="mt-1 text-sm text-slate-500">Free to use</p>
+              <p className="text-3xl font-extrabold text-[#160824] sm:text-4xl">100%</p>
+              <p className="mt-1 text-sm text-[#160824]/50">Free to use</p>
             </div>
           </div>
         </div>
@@ -307,9 +307,9 @@ export default function Homepage() {
           ].map(({ icon: Icon, text }) => (
             <div
               key={text}
-              className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-400 backdrop-blur-sm"
+              className="flex items-center gap-2 rounded-full border border-[#160824]/12 bg-white/40 px-4 py-2 text-sm text-[#160824]/60 backdrop-blur-sm"
             >
-              <Icon className="h-3.5 w-3.5 text-violet-400" />
+              <Icon className="h-3.5 w-3.5 text-[#223030]" />
               {text}
             </div>
           ))}
@@ -317,7 +317,7 @@ export default function Homepage() {
       </section>
 
       {/* ── Rest of page (light background) ──────────────────────────── */}
-      <div className="bg-white">
+      <div className="bg-[#c3bfc7]">
         <div id="features-section" className="scroll-mt-16">
           <Features />
         </div>

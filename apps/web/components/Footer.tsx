@@ -24,7 +24,7 @@ const navigation = {
 
 export function Footer() {
   return (
-    <footer className="bg-gray-900" aria-labelledby="footer-heading">
+    <footer className="bg-[#39383b]" aria-labelledby="footer-heading">
       <h2 id="footer-heading" className="sr-only">
         Footer
       </h2>
@@ -33,24 +33,24 @@ export function Footer() {
           {/* Brand & Socials Section */}
           <div className="space-y-4">
             <Link href="/" className="flex items-center gap-2">
-              <svg className="h-10 w-auto text-gray-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <svg className="h-10 w-auto text-white/70" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
               </svg>
-              <span className="text-lg font-semibold text-gray-600">LinkShorty</span>
+              <span className="text-lg font-semibold text-white">LinkShorty</span>
             </Link>
-            <p className="text-sm leading-6 text-gray-300">
+            <p className="text-sm leading-6 text-white/75">
               Shorten, share, and analyze your links with precision.
             </p>
             <div className="flex space-x-6">
-              <a href="#" className="text-gray-400 hover:text-gray-300">
+              <a href="#" className="text-white/60 hover:text-white">
                 <span className="sr-only">GitHub</span>
                 <Github className="h-6 w-6" aria-hidden="true" />
               </a>
-              <a href="#" className="text-gray-400 hover:text-gray-300">
+              <a href="#" className="text-white/60 hover:text-white">
                 <span className="sr-only">Twitter</span>
                 <Twitter className="h-6 w-6" aria-hidden="true" />
               </a>
-              <a href="#" className="text-gray-400 hover:text-gray-300">
+              <a href="#" className="text-white/60 hover:text-white">
                 <span className="sr-only">LinkedIn</span>
                 <Linkedin className="h-6 w-6" aria-hidden="true" />
               </a>
@@ -99,7 +99,7 @@ export function Footer() {
         </div>
 
         <div className="mt-16 border-t border-white/10 pt-8 sm:mt-20 lg:mt-24">
-          <p className="text-xs leading-5 text-gray-400">
+          <p className="text-xs leading-5 text-white/50">
             &copy; {new Date().getFullYear()} LinkShorty. All rights reserved.
           </p>
         </div>

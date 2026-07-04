@@ -1,5 +1,7 @@
 credentials/
-*.json
+*adminsdk*.json
+*firebase*.json
+supa.json
 
 .env
 web-app-anwar-firebase-adminsdk-fbsvc-f5cb9d56ee.json

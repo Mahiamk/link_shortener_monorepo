@@ -22,34 +22,6 @@ app = FastAPI(
     version="1.0.0"
 )
 
-@app.on_event("startup")
-async def startup():
-    import logging
-    from sqlalchemy import text
-    logger = logging.getLogger(__name__)
-
-    # Widen columns that were originally too narrow.
-    # These ALTER statements are idempotent — MySQL silently succeeds if the
-    # column is already TEXT.
-    migrations = [
-        "ALTER TABLE links MODIFY COLUMN original_url TEXT NOT NULL",
-        "ALTER TABLE clicks MODIFY COLUMN referrer TEXT",
-    ]
-    try:
-        with engine.connect() as conn:
-            for stmt in migrations:
-                try:
-                    conn.execute(text(stmt))
-                except Exception as e:
-                    logger.warning(f"Migration skipped ({e}): {stmt}")
-            conn.commit()
-    except Exception as e:
-        logger.error(f"Could not run startup migrations: {e}")
-
-    try:
-        Base.metadata.create_all(bind=engine)
-    except Exception as e:
-        logger.error(f"DB create_all failed (tables may already exist): {e}")
 
 app.state.limiter = limiter
 

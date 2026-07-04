@@ -25,14 +25,6 @@ app = FastAPI(
 
 app.state.limiter = limiter
 
-@app.exception_handler(Exception)
-async def debug_exception_handler(request: Request, exc: Exception):
-    import traceback
-    return JSONResponse(
-        status_code=500,
-        content={"detail": str(exc), "type": type(exc).__name__, "trace": traceback.format_exc()},
-    )
-
 @app.exception_handler(RateLimitExceeded)
 async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
     return JSONResponse(

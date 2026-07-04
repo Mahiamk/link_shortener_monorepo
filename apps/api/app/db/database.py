@@ -1,5 +1,5 @@
 import os
-import ssl as ssl_lib
+import certifi
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -23,11 +23,10 @@ if "?" in SQLALCHEMY_DATABASE_URL:
     base_url, _ = SQLALCHEMY_DATABASE_URL.split("?", 1)
     SQLALCHEMY_DATABASE_URL = base_url
 
-# SSL context: connect over TLS but skip server cert verification since we
-# don't have Aiven's CA cert bundled in the serverless environment.
-_ssl_ctx = ssl_lib.create_default_context()
-_ssl_ctx.check_hostname = False
-_ssl_ctx.verify_mode = ssl_lib.CERT_NONE
+# Use certifi's CA bundle so PyMySQL can verify Aiven's TLS cert.
+# Passing ssl={"ca": path} is the stable PyMySQL way across versions —
+# avoids the ssl.SSLContext EBUSY issue seen on Python 3.12 + Vercel.
+_ssl_args = {"ca": certifi.where()}
 
 # NullPool: no persistent pool — each request opens/closes its own connection.
 # Required for serverless (Vercel) where multiple cold-starts would otherwise
@@ -35,7 +34,7 @@ _ssl_ctx.verify_mode = ssl_lib.CERT_NONE
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
     poolclass=NullPool,
-    connect_args={"connect_timeout": 8, "ssl": _ssl_ctx},
+    connect_args={"connect_timeout": 8, "ssl": _ssl_args},
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

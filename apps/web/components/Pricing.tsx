@@ -1,7 +1,7 @@
 'use client'
 
-import { CheckIcon } from 'lucide-react'
 import Link from 'next/link'
+import { CheckCircle, Sparkle } from '@phosphor-icons/react'
 
 const tiers = [
   {
@@ -23,7 +23,7 @@ const tiers = [
   {
     name: 'Pro',
     id: 'tier-pro',
-    href: '#',
+    href: '/signup',
     price: { monthly: '$9', annually: '$99' },
     description: 'Advanced analytics, deeper audience insights, and professional tools.',
     features: [
@@ -39,7 +39,7 @@ const tiers = [
   {
     name: 'Enterprise',
     id: 'tier-enterprise',
-    href: '#',
+    href: '/contact',
     price: { monthly: 'Custom', annually: 'Custom' },
     description: 'For high-volume traffic, large teams, and full API integration.',
     features: [
@@ -59,69 +59,81 @@ function classNames(...classes: (string | boolean | undefined)[]) {
 
 export function Pricing() {
   return (
-    <div className="bg-[#c3bfc7] py-24 sm:py-32">
+    <div className="bg-[#f8fafc] py-24 sm:py-32 border-t border-slate-200/80">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="mx-auto max-w-4xl text-center">
-          <h2 className="text-base font-semibold leading-7 text-[#160824]/65">
-            Pricing
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-3.5 py-1 text-xs font-semibold text-indigo-700 ring-1 ring-inset ring-indigo-700/10">
+            <Sparkle weight="duotone" className="h-3.5 w-3.5" />
+            Simple Pricing
+          </span>
+          <h2 className="mt-4 text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl">
+            Start Free, Scale Smart
           </h2>
-          <p className="mt-2 text-4xl font-bold tracking-tight text-[#160824] sm:text-5xl">
-            Start Free, Scale Smart.
+          <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-slate-600">
+            We offer a full-featured Free plan with no credit card required.
+            Upgrade whenever your audience and campaign needs expand.
           </p>
         </div>
-        <p className="mx-auto mt-6 max-w-2xl text-center text-lg leading-8 text-[#160824]">
-          We offer a powerful{" "}
-          <span className="font-semibold px-1 py-1 rounded-xl bg-gradient-to-r from-gray-400 via-gray-300 to-gray-400 text-gray-800 shadow-md shadow-gray-300/40 backdrop-blur">
-            Free Starter
-          </span>{" "}
-          plan with no time limits. When your needs grow, our advanced tiers are ready for you.
-        </p>
 
-
-        <div className="isolate mx-auto mt-16 grid max-w-md grid-cols-1 gap-y-8 sm:mt-20 lg:max-w-4xl lg:grid-cols-3 lg:gap-x-8">
+        <div className="isolate mx-auto mt-16 grid max-w-md grid-cols-1 gap-y-8 sm:mt-20 lg:max-w-6xl lg:grid-cols-3 lg:gap-x-8">
           {tiers.map((tier) => (
             <div
               key={tier.id}
               className={classNames(
-                tier.highlight ? 'ring-2 ring-[#223030]' : 'ring-1 ring-[#160824]/20',
-                'rounded-3xl p-8 shadow-xl transition hover:shadow-2xl bg-white/70 flex flex-col',
+                tier.highlight
+                  ? 'ring-2 ring-indigo-600 shadow-xl shadow-indigo-500/10 bg-white relative'
+                  : 'ring-1 ring-slate-200 bg-white/80 shadow-sm',
+                'rounded-3xl p-8 transition-all hover:shadow-lg flex flex-col',
               )}
             >
-              <h3
-                id={tier.id}
-                className={classNames(
-                  tier.highlight ? 'text-[#223030]' : 'text-[#160824]',
-                  'text-lg font-semibold leading-8',
-                )}
-              >
-                {tier.name}
-              </h3>
-              <p className="mt-4 text-sm leading-6 text-[#160824]/60">{tier.description}</p>
+              {tier.highlight && (
+                <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-indigo-600 px-3 py-0.5 text-xs font-semibold uppercase tracking-wider text-white shadow-sm">
+                  Most Popular
+                </span>
+              )}
+
+              <div className="flex items-center justify-between">
+                <h3
+                  id={tier.id}
+                  className="text-lg font-bold leading-8 text-slate-900"
+                >
+                  {tier.name}
+                </h3>
+              </div>
+
+              <p className="mt-2 text-xs leading-5 text-slate-500">{tier.description}</p>
+              
               <p className="mt-6 flex items-baseline gap-x-1">
-                <span className="text-4xl font-bold tracking-tight text-[#160824]">
+                <span className="text-4xl font-extrabold tracking-tight text-slate-900 tabular-nums">
                   {tier.price.monthly}
                 </span>
                 {tier.price.monthly !== 'Free' && tier.price.monthly !== 'Custom' ? (
-                  <span className="text-sm font-semibold leading-6 text-gray-600">/month</span>
+                  <span className="text-xs font-medium text-slate-500">/month</span>
                 ) : null}
               </p>
+
               <Link
                 href={tier.href}
                 aria-describedby={tier.id}
                 className={classNames(
                   tier.highlight
-                    ? 'bg-[#223030] text-white shadow-sm hover:bg-[#2e4040] focus-visible:outline-[#223030]'
-                    : 'text-[#160824] ring-1 ring-inset ring-[#160824]/20 hover:ring-[#160824]/30 focus-visible:outline-[#160824]',
-                  'mt-6 block rounded-md py-2 px-3 text-center text-sm font-semibold leading-6 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50',
+                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200 hover:bg-indigo-700'
+                    : 'bg-slate-100 text-slate-800 hover:bg-slate-200',
+                  'mt-6 block rounded-xl py-2.5 px-4 text-center text-sm font-semibold transition-colors',
                 )}
               >
-                {tier.id === 'tier-free' ? 'Get Started for Free' : 'Learn More'}
+                {tier.id === 'tier-free' ? 'Get Started Free' : 'Choose ' + tier.name}
               </Link>
-              <ul role="list" className="mt-8 space-y-3 text-sm leading-6 text-[#160824]/60 grow">
+
+              <ul role="list" className="mt-8 space-y-3 text-xs leading-6 text-slate-600 grow">
                 {tier.features.map((feature) => (
-                  <li key={feature} className="flex gap-x-3">
-                    <CheckIcon className="h-6 w-5 shrink-0 text-[#223030]" aria-hidden="true" />
-                    {feature}
+                  <li key={feature} className="flex items-start gap-x-2.5">
+                    <CheckCircle
+                      weight="duotone"
+                      className="h-4 w-4 shrink-0 text-indigo-600 mt-1"
+                      aria-hidden="true"
+                    />
+                    <span>{feature}</span>
                   </li>
                 ))}
               </ul>

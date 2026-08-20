@@ -8,42 +8,57 @@ import {
   Link as LinkType,
 } from '@/lib/api'
 import {
+  LinkSimple,
   Copy,
-  Trash2,
-  ExternalLink,
-  BarChartHorizontal,
-  QrCodeIcon
-} from 'lucide-react'
+  Trash,
+  ArrowSquareOut,
+  CheckCircle,
+  QrCode,
+  ChartBar,
+  MagnifyingGlass,
+  CircleNotch,
+} from '@phosphor-icons/react'
 import { QrCodeModal } from '@/components/QrCodeModal'
-import { AnalyticsModal } from '@/components/AnalyticsModal' // Use relative path
+import { AnalyticsModal } from '@/components/AnalyticsModal'
+import { D3Sparkline } from '@/components/charts/D3Sparkline'
 
 export default function YourLinksPage() {
   const router = useRouter()
   const [links, setLinks] = useState<LinkType[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [copiedLink, setCopiedLink] = useState<number | null>(null)
+  const [copiedId, setCopiedId] = useState<number | null>(null)
+  const [search, setSearch] = useState('')
+
+  // Modals
   const [selectedLinkStats, setSelectedLinkStats] = useState<number | null>(null)
   const [selectedLinkQr, setSelectedLinkQr] = useState<LinkType | null>(null)
 
-  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:8000';
+  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:8000'
 
   const fetchLinks = useCallback(async () => {
     const token = localStorage.getItem('token')
     if (!token) {
-       router.push('/login')
-       return
+      router.push('/login')
+      return
     }
     try {
       setError('')
       setLoading(true)
       const data: LinkType[] = await getMyLinks(token)
-      setLinks(data ? data.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()) : [])
+      setLinks(
+        data
+          ? data.sort(
+              (a, b) =>
+                new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+            )
+          : []
+      )
     } catch (err: unknown) {
       setError('Failed to load your links.')
       if (String(err).includes('401')) {
-         localStorage.removeItem('token'); localStorage.removeItem('userEmail');
-         router.push('/login')
+        localStorage.removeItem('token')
+        router.push('/login')
       }
     } finally {
       setLoading(false)
@@ -52,129 +67,213 @@ export default function YourLinksPage() {
 
   useEffect(() => {
     fetchLinks()
-    const handleFocus = () => fetchLinks()
-    window.addEventListener('focus', handleFocus)
-    return () => window.removeEventListener('focus', handleFocus)
   }, [fetchLinks])
 
-  const handleCopy = (shortCode: string) => {
-    const fullShortUrl = `${BASE_URL}/${shortCode}`
-    navigator.clipboard.writeText(fullShortUrl)
-    setCopiedLink(links.find(l => l.short_code === shortCode)?.id || null)
-    setTimeout(() => setCopiedLink(null), 2000)
+  const handleCopy = (link: LinkType) => {
+    const fullShortUrl = `${BASE_URL}/${link.short_code}`
+    navigator.clipboard.writeText(fullShortUrl).then(() => {
+      setCopiedId(link.id)
+      setTimeout(() => setCopiedId(null), 2000)
+    })
   }
 
   const handleDelete = async (id: number) => {
     const token = localStorage.getItem('token')
-    if (!token) {
-      router.push('/login')
-      return
-    }
+    if (!token) return
     if (!window.confirm('Are you sure you want to delete this link?')) return
     try {
       await deleteLink(id, token)
       setLinks((prev) => prev.filter((l) => l.id !== id))
-    } catch (err: unknown) {
+    } catch {
       alert('Failed to delete link.')
-       if (String(err).includes('401')) {
-         localStorage.removeItem('token'); localStorage.removeItem('userEmail');
-         router.push('/login')
-      }
     }
   }
 
+  const filteredLinks = useMemo(() => {
+    return links.filter(
+      (l) =>
+        l.short_code.toLowerCase().includes(search.toLowerCase()) ||
+        (l.original_url || l.long_url || '').toLowerCase().includes(search.toLowerCase()) ||
+        (l.tag && l.tag.toLowerCase().includes(search.toLowerCase()))
+    )
+  }, [links, search])
+
   return (
-    <div>
-      <h2 className="text-2xl font-semibold text-gray-900 mb-6">Your Links</h2>
-      {error && <p className="mb-4 text-gray-500">{error}</p>}
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+            Your Links
+          </h1>
+          <p className="text-xs text-slate-500 mt-1">
+            Manage, share, and track all your shortened links.
+          </p>
+        </div>
 
-      <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
+        {/* Search */}
+        <div className="relative">
+          <MagnifyingGlass
+            weight="bold"
+            className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400"
+          />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by URL or tag..."
+            className="rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100 w-64"
+          />
+        </div>
+      </div>
+
+      {error && <p className="text-xs text-rose-600">{error}</p>}
+
+      {/* Table */}
+      <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs">
         {loading && links.length === 0 ? (
-           <div className="p-10 text-center text-gray-500">Loading links...</div>
+          <div className="flex flex-col items-center justify-center p-12 text-center text-slate-400">
+            <CircleNotch weight="bold" className="h-6 w-6 animate-spin text-indigo-600 mb-2" />
+            <p className="text-xs">Loading links...</p>
+          </div>
+        ) : filteredLinks.length === 0 ? (
+          <div className="flex flex-col items-center justify-center p-12 text-center text-slate-500">
+            <LinkSimple weight="duotone" className="h-8 w-8 text-slate-300 mb-2" />
+            <p className="text-sm font-semibold text-slate-700">No links found</p>
+            <p className="text-xs text-slate-400 mt-1">
+              {search ? 'Try adjusting your search criteria.' : 'Create a short link from the dashboard!'}
+            </p>
+          </div>
         ) : (
-          <table className="min-w-full divide-y divide-gray-200 lg:min-w-[768px]">
-            <thead className="bg-gray-50">
-              <tr>
-                {/* Added whitespace-nowrap to headers too */}
-                <th scope="col" className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-gray-500 whitespace-nowrap">Short Link</th>
-                <th scope="col" className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-gray-500 whitespace-nowrap">Original URL</th>
-                <th scope="col" className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-gray-500 whitespace-nowrap">Clicks</th>
-                <th scope="col" className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-gray-500 whitespace-nowrap">Date</th>
-                <th scope="col" className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-gray-500 whitespace-nowrap">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {!loading && links.length === 0 ? (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-slate-100 text-left text-xs">
+              <thead className="bg-slate-50 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
                 <tr>
-                  <td colSpan={5} className="px-6 py-10 text-center text-gray-500">
-                    You haven’t created any links yet. Go to Overview to create one!
-                  </td>
+                  <th scope="col" className="px-5 py-3.5">Short Link</th>
+                  <th scope="col" className="px-5 py-3.5">Original URL</th>
+                  <th scope="col" className="px-5 py-3.5">Tag</th>
+                  <th scope="col" className="px-5 py-3.5 text-center">Clicks</th>
+                  <th scope="col" className="px-5 py-3.5 text-center">Activity</th>
+                  <th scope="col" className="px-5 py-3.5 text-right">Actions</th>
                 </tr>
-              ) : (
-                links.map((link) => (
-                  <tr key={link.id} className="hover:bg-gray-50/50">
-                    {/* Short Link */}
-                    <td className="whitespace-nowrap px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <a href={`${BASE_URL}/${link.short_code}`} target="_blank" rel="noopener noreferrer" className="font-medium text-gray-600 hover:text-gray-800">
-                          {`${BASE_URL.replace(/^https?:\/\//, '')}/${link.short_code}`}
-                        </a>
-                        <button onClick={() => handleCopy(link.short_code)} title="Copy short link" className="text-gray-400 hover:text-gray-600">
-                          {copiedLink === link.id ? (<span className="text-xs text-gray-600">Copied!</span>) : (<Copy className="h-4 w-4" />)}
-                        </button>
-                      </div>
-                    </td>
-                    {/* Original URL */}
-                    <td className="max-w-xs whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                      <div className="flex items-center gap-2 truncate">
-                         <img src={`https://www.google.com/s2/favicons?domain=${new URL(link.original_url).hostname}&sz=16`} alt="favicon" className="h-4 w-4 flex-shrink-0" onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')} />
-                        <span className="truncate">{link.original_url}</span>
-                        <a href={link.original_url} target="_blank" rel="noopener noreferrer" title="Visit original URL" className="ml-2 text-gray-400 hover:text-gray-600">
-                          <ExternalLink className="h-4 w-4" />
-                        </a>
-                      </div>
-                    </td>
-                    {/* Clicks */}
-                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{link.clicks || 0}</td>
-                    {/* Date */}
-                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{new Date(link.created_at).toLocaleDateString()}</td>
-                    {/* Actions Column */}
-                    <td className="whitespace-nowrap px-6 py-4 text-left text-sm font-medium space-x-4">
-                      <button
-                        onClick={() => setSelectedLinkQr(link)} // Pass the whole link object
-                        className="text-gray-400 hover:text-gray-600 inline-flex items-center"
-                        title="View QR Code"
-                      >
-                        <QrCodeIcon className="h-5 w-5" />
-                        <span className="sr-only">View QR Code</span>
-                      </button>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredLinks.map((link) => {
+                  const isCopied = copiedId === link.id
+                  const linkClicks = link.clicks ?? link.click_count ?? 0
+                  const targetUrl = link.original_url || link.long_url || '#'
+                  const miniSeries = [
+                    Math.max(0, Math.floor(linkClicks * 0.3)),
+                    Math.max(0, Math.floor(linkClicks * 0.7)),
+                    linkClicks,
+                  ]
 
-                      <button onClick={() => setSelectedLinkStats(link.id)} className="text-gray-400 hover:text-gray-600 inline-flex items-center" title="View stats">
-                        <BarChartHorizontal className="h-5 w-5" />
-                        <span className="sr-only">View Stats</span>
-                      </button>
-                      <button onClick={() => handleDelete(link.id)} className="text-gray-500 hover:text-gray-700 inline-flex items-center" title="Delete link">
-                        <Trash2 className="h-5 w-5" />
-                        <span className="sr-only">Delete</span>
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-         )}
-      </div> 
+                  return (
+                    <tr key={link.id} className="hover:bg-slate-50/70 transition-colors">
+                      {/* Short code */}
+                      <td className="px-5 py-3.5 font-semibold text-indigo-600">
+                        /{link.short_code}
+                      </td>
 
+                      {/* Destination */}
+                      <td className="px-5 py-3.5 max-w-[280px] truncate text-slate-600">
+                        <a
+                          href={targetUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="hover:text-slate-900 inline-flex items-center gap-1"
+                        >
+                          <span className="truncate">{targetUrl}</span>
+                          <ArrowSquareOut weight="bold" className="h-3 w-3 shrink-0 text-slate-400" />
+                        </a>
+                      </td>
+
+                      {/* Tag */}
+                      <td className="px-5 py-3.5 text-slate-500">
+                        {link.tag ? (
+                          <span className="rounded-md bg-indigo-50 px-2 py-0.5 text-[11px] font-medium text-indigo-700">
+                            {link.tag}
+                          </span>
+                        ) : (
+                          <span className="text-slate-300">—</span>
+                        )}
+                      </td>
+
+                      {/* Clicks */}
+                      <td className="px-5 py-3.5 text-center font-bold text-slate-900 tabular-nums">
+                        {linkClicks}
+                      </td>
+
+                      {/* D3 Sparkline Activity */}
+                      <td className="px-5 py-3.5 text-center">
+                        <div className="inline-block">
+                          <D3Sparkline
+                            data={miniSeries}
+                            width={75}
+                            height={22}
+                            color="#4f46e5"
+                            strokeWidth={1.5}
+                          />
+                        </div>
+                      </td>
+
+                      {/* Actions */}
+                      <td className="px-5 py-3.5 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => handleCopy(link)}
+                            title="Copy link"
+                            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+                          >
+                            {isCopied ? (
+                              <CheckCircle weight="duotone" className="h-4 w-4 text-emerald-600" />
+                            ) : (
+                              <Copy weight="duotone" className="h-4 w-4" />
+                            )}
+                          </button>
+
+                          <button
+                            onClick={() => setSelectedLinkQr(link)}
+                            title="QR Code"
+                            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-indigo-600 transition-colors"
+                          >
+                            <QrCode weight="duotone" className="h-4 w-4" />
+                          </button>
+
+                          <button
+                            onClick={() => setSelectedLinkStats(link.id)}
+                            title="Analytics"
+                            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-indigo-600 transition-colors"
+                          >
+                            <ChartBar weight="duotone" className="h-4 w-4" />
+                          </button>
+
+                          <button
+                            onClick={() => handleDelete(link.id)}
+                            title="Delete"
+                            className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition-colors"
+                          >
+                            <Trash weight="duotone" className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Modals */}
       <AnalyticsModal
         linkId={selectedLinkStats}
         open={selectedLinkStats !== null}
         onClose={() => setSelectedLinkStats(null)}
       />
 
-      {/* QR Code Modal */}
       <QrCodeModal
-        link={selectedLinkQr} 
+        link={selectedLinkQr}
         open={selectedLinkQr !== null}
         onClose={() => setSelectedLinkQr(null)}
       />

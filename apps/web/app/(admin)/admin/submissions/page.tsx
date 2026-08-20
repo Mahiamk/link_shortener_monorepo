@@ -1,11 +1,14 @@
-// In: app/admin/submissions/page.tsx
-
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Trash2, User, Mail, Calendar } from 'lucide-react'
+import {
+  Trash,
+  User as UserIcon,
+  EnvelopeSimple,
+  CalendarBlank,
+  CircleNotch,
+} from '@phosphor-icons/react'
 
-// This type must match your backend's ContactSubmission schema
 interface ContactSubmission {
   id: number
   first_name: string
@@ -15,12 +18,15 @@ interface ContactSubmission {
   created_at: string
 }
 
-// Helper to format the date
 function formatDate(dateString: string) {
-  return new Date(dateString).toLocaleString('en-US', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  })
+  try {
+    return new Date(dateString).toLocaleString('en-US', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    })
+  } catch {
+    return dateString
+  }
 }
 
 export default function AdminSubmissionsPage() {
@@ -28,20 +34,15 @@ export default function AdminSubmissionsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Fetch all submissions from the backend
   const fetchSubmissions = async (token: string) => {
     setLoading(true)
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-      const res = await fetch(
-        // This is the new backend endpoint we will create
-        `${apiUrl}/api/contact-submissions/`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+      const apiUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:8000'
+      const res = await fetch(`${apiUrl}/api/contact-submissions/`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
         },
-      )
+      })
 
       if (res.status === 401 || res.status === 403) {
         throw new Error('Unauthorized. Please log in as an admin.')
@@ -51,150 +52,126 @@ export default function AdminSubmissionsPage() {
       }
 
       const data: ContactSubmission[] = await res.json()
-      // Sort by most recent first
       data.sort(
         (a, b) =>
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       )
       setSubmissions(data)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unknown error occurred')
+      setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {
       setLoading(false)
     }
   }
 
-  // Get token and fetch data on component mount
   useEffect(() => {
     const token = localStorage.getItem('token')
     if (!token) {
-      setError('No authentication token found. Please log in.')
+      setError('No authentication token found.')
       setLoading(false)
       return
     }
     fetchSubmissions(token)
   }, [])
 
-  // Handle the deletion of a submission
   const handleDelete = async (id: number) => {
-    if (
-      !window.confirm(
-        'Are you sure you want to delete this submission permanently?',
-      )
-    ) {
-      return
-    }
+    if (!window.confirm('Are you sure you want to delete this submission?')) return
 
     const token = localStorage.getItem('token')
-    if (!token) {
-      setError('Token not found. Cannot delete.')
-      return
-    }
+    if (!token) return
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-      const res = await fetch(
-        // This is the new delete endpoint we will create
-        `${apiUrl}/api/contact-submissions/${id}`,
-        {
-          method: 'DELETE',
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+      const apiUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:8000'
+      const res = await fetch(`${apiUrl}/api/contact-submissions/${id}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
         },
-      )
+      })
 
-      if (res.status === 401 || res.status === 403) {
-        throw new Error('You do not have permission to delete this.')
-      }
-      if (!res.ok) {
-        throw new Error('Failed to delete submission')
-      }
-
-      // Remove the deleted item from the state
+      if (!res.ok) throw new Error('Failed to delete')
       setSubmissions((prev) => prev.filter((sub) => sub.id !== id))
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unknown error occurred')
+      setError(err instanceof Error ? err.message : 'Delete failed')
     }
   }
 
   return (
-    // This assumes your admin pages have a layout that provides padding.
-    // If not, wrap this in a <div> with `className="p-6 sm:p-10"`
-    <>
-      <h1 className="text-3xl font-bold tracking-tight text-gray-900">
-        Contact Submissions
-      </h1>
-      <p className="mt-2 text-lg text-gray-600">
-        View and manage messages from the website contact form.
-      </p>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+          Contact Submissions
+        </h1>
+        <p className="text-xs text-slate-500 mt-1">
+          View messages and feedback received from the contact form.
+        </p>
+      </div>
 
-      {/* Loading and Error States */}
       {loading && (
-        <div className="mt-10 text-center text-gray-500">Loading...</div>
+        <div className="flex min-h-[300px] flex-col items-center justify-center text-slate-400">
+          <CircleNotch weight="bold" className="h-7 w-7 animate-spin text-indigo-600 mb-2" />
+          <p className="text-xs">Loading contact submissions...</p>
+        </div>
       )}
+
       {error && (
-        <div className="mt-10 rounded-md border border-gray-300 bg-gray-50 p-4 text-center text-gray-700">
+        <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-xs font-semibold text-rose-700">
           {error}
         </div>
       )}
 
-      {/* Submissions List */}
       {!loading && !error && (
-        <div className="mt-8 flow-root">
-          <ul role="list" className="divide-y divide-gray-200">
-            {submissions.length === 0 ? (
-              <li className="py-10 text-center text-gray-500">
-                No submissions found.
-              </li>
-            ) : (
-              submissions.map((sub) => (
-                <li key={sub.id} className="py-6">
-                  <div className="flex flex-col gap-4 sm:flex-row sm:justify-between">
-                    {/* Submission Info */}
-                    <div className="min-w-0 flex-1">
-                      <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2">
-                        <p className="flex items-center gap-1.5 text-sm font-semibold text-gray-900">
-                          <User className="h-4 w-4 text-gray-500" />
-                          {sub.first_name} {sub.last_name}
-                        </p>
-                        <p className="flex items-center gap-1.5 text-sm text-gray-600">
-                          <Mail className="h-4 w-4 text-gray-500" />
-                          <a
-                            href={`mailto:${sub.email}`}
-                            className="hover:underline"
-                          >
-                            {sub.email}
-                          </a>
-                        </p>
-                        <p className="flex items-center gap-1.5 text-sm text-gray-600">
-                          <Calendar className="h-4 w-4 text-gray-500" />
-                          {formatDate(sub.created_at)}
-                        </p>
-                      </div>
-                      <blockquote className="mt-2 border-l-4 border-gray-200 pl-4 text-gray-700">
-                        {sub.message}
-                      </blockquote>
+        <div className="space-y-4">
+          {submissions.length === 0 ? (
+            <div className="rounded-2xl border border-slate-200/80 bg-white p-12 text-center text-slate-400">
+              <EnvelopeSimple weight="duotone" className="h-8 w-8 mx-auto text-slate-300 mb-2" />
+              <p className="text-xs">No contact submissions found.</p>
+            </div>
+          ) : (
+            submissions.map((sub) => (
+              <div
+                key={sub.id}
+                className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs transition-shadow hover:shadow-sm"
+              >
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                  <div className="space-y-2 flex-1">
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+                      <span className="flex items-center gap-1.5 font-bold text-slate-900">
+                        <UserIcon weight="duotone" className="h-4 w-4 text-indigo-600" />
+                        {sub.first_name} {sub.last_name}
+                      </span>
+                      <a
+                        href={`mailto:${sub.email}`}
+                        className="flex items-center gap-1.5 text-slate-500 hover:text-indigo-600"
+                      >
+                        <EnvelopeSimple weight="duotone" className="h-4 w-4 text-slate-400" />
+                        {sub.email}
+                      </a>
+                      <span className="flex items-center gap-1.5 text-slate-400 text-[11px]">
+                        <CalendarBlank weight="duotone" className="h-4 w-4" />
+                        {formatDate(sub.created_at)}
+                      </span>
                     </div>
 
-                    {/* Delete Button */}
-                    <div className="flex-shrink-0 sm:ml-6 sm:pt-1">
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(sub.id)}
-                        className="inline-flex items-center gap-1.5 rounded-md bg-white px-3 py-1.5 text-sm font-semibold text-gray-600 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        Delete
-                      </button>
-                    </div>
+                    <p className="mt-2 rounded-xl bg-slate-50 p-3.5 text-xs leading-relaxed text-slate-700">
+                      {sub.message}
+                    </p>
                   </div>
-                </li>
-              ))
-            )}
-          </ul>
+
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(sub.id)}
+                    className="inline-flex items-center gap-1 rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 transition-colors self-start shrink-0"
+                  >
+                    <Trash weight="duotone" className="h-3.5 w-3.5" />
+                    <span>Delete</span>
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       )}
-    </>
+    </div>
   )
 }

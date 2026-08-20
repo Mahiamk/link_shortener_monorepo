@@ -3,234 +3,235 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getAllUsers, User, updateUserStatus, deleteUser } from '@/lib/api'
-import { ShieldCheck, User as UserIcon, ToggleLeft, ToggleRight, Trash2, Loader2 } from 'lucide-react'
-
+import {
+  ShieldCheck,
+  User as UserIcon,
+  ToggleLeft,
+  ToggleRight,
+  Trash,
+  CircleNotch,
+} from '@phosphor-icons/react'
 
 export default function AdminUsersPage() {
-  const router = useRouter();
+  const router = useRouter()
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [updatingUserId, setUpdatingUserId] = useState<number | null>(null)
-  const [currentAdminEmail, setCurrentAdminEmail] = useState<string | null>(null);
+  const [currentAdminEmail, setCurrentAdminEmail] = useState<string | null>(null)
 
   useEffect(() => {
-    setCurrentAdminEmail(localStorage.getItem('userEmail'));
-  }, []);
+    setCurrentAdminEmail(localStorage.getItem('userEmail'))
+  }, [])
 
-  // Fetch users function
   const fetchUsers = async () => {
     const token = localStorage.getItem('token')
     if (!token) {
-      setError("No token found. Redirecting to login...");
-      setTimeout(() => router.push('/auth/login'), 1500);
+      setError('No token found. Redirecting to login...')
+      setTimeout(() => router.push('/login'), 1500)
       setLoading(false)
       return
     }
     try {
-      setLoading(true);
-      setError(null);
+      setLoading(true)
+      setError(null)
       const data = await getAllUsers(token)
-      setUsers(data ? data.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()) : [])
+      setUsers(
+        data
+          ? data.sort(
+              (a, b) =>
+                new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+            )
+          : []
+      )
     } catch (err) {
       console.error(err)
-      setError("Failed to fetch users. You may not have permission.")
-      if (String(err).includes('401') || String(err).includes('credentials')) {
-        localStorage.removeItem('token'); localStorage.removeItem('userEmail');
-        sessionStorage.removeItem('adminVerified');
-        router.push('/auth/login');
+      setError('Failed to fetch users.')
+      if (String(err).includes('401')) {
+        localStorage.removeItem('token')
+        router.push('/login')
       }
     } finally {
       setLoading(false)
     }
-  };
+  }
 
   useEffect(() => {
     fetchUsers()
-  }, [router]); // Re-added router dependency
+  }, [])
 
-  // Handler for toggling user status
   const handleToggleActive = async (userToUpdate: User) => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      console.error("No token found. Cannot update user status.");
-      return;
-    }
+    const token = localStorage.getItem('token')
+    if (!token) return
 
     if (userToUpdate.email === currentAdminEmail) {
-      alert("You cannot deactivate your own account.");
-      return;
+      alert('You cannot deactivate your own account.')
+      return
     }
 
-    setUpdatingUserId(userToUpdate.id);
+    setUpdatingUserId(userToUpdate.id)
     try {
-      const newStatus = !userToUpdate.is_active;
-      const updatedUser = await updateUserStatus(token, userToUpdate.id, newStatus);
-      setUsers(prevUsers =>
-        prevUsers.map(user =>
-          user.id === updatedUser.id ? { ...user, is_active: updatedUser.is_active } : user
+      const newStatus = !userToUpdate.is_active
+      const updatedUser = await updateUserStatus(token, userToUpdate.id, newStatus)
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.id === updatedUser.id ? { ...u, is_active: updatedUser.is_active } : u
         )
-      );
+      )
     } catch (err) {
-      console.error("Failed to update user status:", err);
-      alert(`Failed to update status for ${userToUpdate.email}. ${err instanceof Error ? err.message : ''}`);
+      alert(`Failed to update status. ${err instanceof Error ? err.message : ''}`)
     } finally {
-      setUpdatingUserId(null);
+      setUpdatingUserId(null)
     }
-  };
+  }
 
-  // Handler for deleting a user
   const handleDeleteUser = async (userToDelete: User) => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      console.error("No token found. Cannot delete user.");
-      return;
-    }
+    const token = localStorage.getItem('token')
+    if (!token) return
 
     if (userToDelete.email === currentAdminEmail) {
-      alert("You cannot delete your own account.");
-      return;
+      alert('You cannot delete your own account.')
+      return
     }
 
-    if (!window.confirm(`Are you sure you want to permanently delete user ${userToDelete.email}? This cannot be undone.`)) {
-      return;
-    }
+    if (
+      !window.confirm(
+        `Are you sure you want to permanently delete user ${userToDelete.email}?`
+      )
+    )
+      return
 
-    setUpdatingUserId(userToDelete.id);
+    setUpdatingUserId(userToDelete.id)
     try {
-      await deleteUser(token, userToDelete.id);
-      setUsers(prevUsers => prevUsers.filter(user => user.id !== userToDelete.id));
+      await deleteUser(token, userToDelete.id)
+      setUsers((prev) => prev.filter((u) => u.id !== userToDelete.id))
     } catch (err) {
-      console.error("Failed to delete user:", err);
-      alert(`Failed to delete ${userToDelete.email}. ${err instanceof Error ? err.message : ''}`);
+      alert(`Failed to delete user. ${err instanceof Error ? err.message : ''}`)
     } finally {
-      setUpdatingUserId(null);
+      setUpdatingUserId(null)
     }
-  };
-
+  }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-10">
-        <p className="text-gray-500">Loading users...</p>
+      <div className="flex min-h-[400px] flex-col items-center justify-center text-slate-400">
+        <CircleNotch weight="bold" className="h-8 w-8 animate-spin text-indigo-600 mb-2" />
+        <p className="text-xs">Loading users...</p>
       </div>
-    );
-  }
-  if (error) {
-    return (
-      <div className="flex items-center justify-center p-10">
-        <p className="text-gray-500">{error}</p>
-      </div>
-    );
+    )
   }
 
   return (
-    <div className="flex-1 space-y-8 p-8 pt-6">
-      <h2 className="text-3xl font-bold tracking-tight text-gray-900">
-        User Management
-      </h2>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+          User Management
+        </h1>
+        <p className="text-xs text-slate-500 mt-1">
+          Review, activate, or remove registered accounts.
+        </p>
+      </div>
 
-      <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th scope="col" className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-gray-500">User</th>
-              <th scope="col" className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Role</th>
-              <th scope="col" className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Status</th>
-              <th scope="col" className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Joined On</th>
-              <th scope="col" className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {users.length === 0 ? (
+      {error && <p className="text-xs text-rose-600">{error}</p>}
+
+      <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-slate-100 text-left text-xs">
+            <thead className="bg-slate-50 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
               <tr>
-                <td colSpan={5} className="px-6 py-10 text-center text-gray-500">
-                  No users found.
-                </td>
+                <th scope="col" className="px-5 py-3.5">User</th>
+                <th scope="col" className="px-5 py-3.5">Role</th>
+                <th scope="col" className="px-5 py-3.5">Status</th>
+                <th scope="col" className="px-5 py-3.5">Joined</th>
+                <th scope="col" className="px-5 py-3.5 text-right">Actions</th>
               </tr>
-            ) : (
-              users.map((user) => (
-                <tr key={user.id} className="hover:bg-gray-50/50">
-                  {/* User Info */}
-                  <td className="whitespace-nowrap px-6 py-4">
-                    <div className="flex items-center">
-                      <div className="mr-3 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-gray-200 text-gray-600">
-                        <UserIcon className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <div className="font-medium text-gray-900">{user.email}</div>
-                        <div className="text-sm text-gray-500">ID: {user.id}</div>
-                      </div>
-                    </div>
-                  </td>
-                  {/* Role */}
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                    {user.is_superuser ? (
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">
-                        <ShieldCheck className="h-4 w-4" />
-                        Admin
-                      </span>
-                    ) : (
-                      <span className="inline-flex rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">
-                        User
-                      </span>
-                    )}
-                  </td>
-                  {/* Status */}
-                  <td className="whitespace-nowrap px-6 py-4">
-                    {user.is_active ? (
-                      <span className="inline-flex rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-800">
-                        Active
-                      </span>
-                    ) : (
-                      <span className="inline-flex rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-800">
-                        Inactive
-                      </span>
-                    )}
-                  </td>
-                  {/* Joined Date */}
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                    {new Date(user.created_at).toLocaleDateString()}
-                  </td>
-                  {/* Actions Cell */}
-                  <td className="whitespace-nowrap px-6 py-4 text-left text-sm font-medium space-x-3">
-                    {updatingUserId === user.id ? (
-                      <Loader2 className="h-5 w-5 animate-spin text-gray-400 inline-flex items-center" />
-                    ) : (
-                      <>
-                        {/* Toggle Active Button */}
-                        <button
-                          onClick={() => handleToggleActive(user)}
-                          disabled={user.email === currentAdminEmail}
-                          className={`inline-flex items-center p-1 rounded-full disabled:opacity-50 disabled:cursor-not-allowed ${
-                            user.is_active
-                              ? 'text-gray-400 hover:text-gray-600'
-                              : 'text-gray-400 hover:text-gray-600'
-                          }`}
-                          title={user.is_active ? 'Deactivate User' : 'Activate User'}
-                        >
-                          {user.is_active ? <ToggleRight className="h-5 w-5" /> : <ToggleLeft className="h-5 w-5" />}
-                          <span className="sr-only">{user.is_active ? 'Deactivate' : 'Activate'}</span>
-                        </button>
-
-                        {/* Delete Button */}
-                        <button
-                          onClick={() => handleDeleteUser(user)}
-                          disabled={user.email === currentAdminEmail}
-                          className="text-gray-400 hover:text-gray-600 inline-flex items-center p-1 rounded-full disabled:opacity-50 disabled:cursor-not-allowed"
-                          title="Delete User"
-                        >
-                          <Trash2 className="h-5 w-5" />
-                          <span className="sr-only">Delete</span>
-                        </button>
-                      </>
-                    )}
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {users.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-5 py-10 text-center text-slate-400">
+                    No users found.
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                users.map((user) => (
+                  <tr key={user.id} className="hover:bg-slate-50/70 transition-colors">
+                    <td className="px-5 py-3.5">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 font-bold text-xs">
+                          {user.email.slice(0, 2).toUpperCase()}
+                        </div>
+                        <div>
+                          <div className="font-semibold text-slate-900">{user.email}</div>
+                          <div className="text-[11px] text-slate-400">ID: {user.id}</div>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td className="px-5 py-3.5">
+                      {user.is_superuser ? (
+                        <span className="inline-flex items-center gap-1 rounded-md bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-700">
+                          <ShieldCheck weight="duotone" className="h-3.5 w-3.5" />
+                          Admin
+                        </span>
+                      ) : (
+                        <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
+                          Member
+                        </span>
+                      )}
+                    </td>
+
+                    <td className="px-5 py-3.5">
+                      {user.is_active ? (
+                        <span className="rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
+                          Active
+                        </span>
+                      ) : (
+                        <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-500">
+                          Inactive
+                        </span>
+                      )}
+                    </td>
+
+                    <td className="px-5 py-3.5 text-slate-500">
+                      {new Date(user.created_at).toLocaleDateString()}
+                    </td>
+
+                    <td className="px-5 py-3.5 text-right">
+                      {updatingUserId === user.id ? (
+                        <CircleNotch weight="bold" className="h-4 w-4 animate-spin text-indigo-600 inline" />
+                      ) : (
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => handleToggleActive(user)}
+                            disabled={user.email === currentAdminEmail}
+                            title={user.is_active ? 'Deactivate' : 'Activate'}
+                            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 disabled:opacity-40"
+                          >
+                            {user.is_active ? (
+                              <ToggleRight weight="fill" className="h-5 w-5 text-indigo-600" />
+                            ) : (
+                              <ToggleLeft weight="fill" className="h-5 w-5 text-slate-400" />
+                            )}
+                          </button>
+
+                          <button
+                            onClick={() => handleDeleteUser(user)}
+                            disabled={user.email === currentAdminEmail}
+                            title="Delete User"
+                            className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600 disabled:opacity-40"
+                          >
+                            <Trash weight="duotone" className="h-4 w-4" />
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   )

@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { getUserProfile, User } from '@/lib/api' 
-import { AdminSidebar } from '@/components/admin/AdminSideBar' 
-import { Bars3Icon } from '@heroicons/react/24/outline'
+import { getUserProfile, User } from '@/lib/api'
+import { AdminSidebar } from '@/components/admin/AdminSideBar'
+import { List, CircleNotch } from '@phosphor-icons/react'
 
 export default function AdminLayout({
   children,
@@ -14,7 +14,7 @@ export default function AdminLayout({
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
-  const [sidebarOpen, setSidebarOpen] = useState(false) 
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   useEffect(() => {
     const checkAdminStatus = async () => {
@@ -24,7 +24,6 @@ export default function AdminLayout({
         return
       }
 
-      // Skip the API call if already verified in this session
       if (sessionStorage.getItem('adminVerified') === 'true') {
         setIsAdmin(true)
         setLoading(false)
@@ -52,36 +51,39 @@ export default function AdminLayout({
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-gray-50">
-        <p className="text-gray-600">Verifying admin access...</p>
+      <div className="flex h-screen items-center justify-center bg-[#f8fafc]">
+        <div className="flex flex-col items-center gap-3">
+          <CircleNotch weight="bold" className="h-8 w-8 animate-spin text-indigo-600" />
+          <p className="text-xs font-semibold text-slate-600">Verifying admin access...</p>
+        </div>
       </div>
     )
   }
 
-  // If verified as admin, show the admin layout
   if (isAdmin) {
     return (
-      <div className="flex h-screen bg-gray-50/50 overflow-hidden">
-        <AdminSidebar 
-          sidebarOpen={sidebarOpen} 
-          setSidebarOpen={setSidebarOpen} 
+      <div className="flex h-screen bg-[#f8fafc] overflow-hidden">
+        <AdminSidebar
+          sidebarOpen={sidebarOpen}
+          setSidebarOpen={setSidebarOpen}
         />
 
-        {/* Main content area (This will scroll) */}
+        {/* Main content area */}
         <main className="flex-1 overflow-y-auto">
-          <div className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-x-6 border-b border-gray-200 bg-white/75 px-4 shadow-sm backdrop-blur-sm lg:hidden">
-            <button 
-              type="button" 
-              className="-m-2.5 p-2.5 text-gray-700" 
+          <div className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-x-4 border-b border-slate-200/80 bg-white/80 px-4 shadow-xs backdrop-blur-md lg:hidden">
+            <button
+              type="button"
+              className="-m-2.5 p-2.5 text-slate-700 hover:text-slate-900"
               onClick={() => setSidebarOpen(true)}
             >
               <span className="sr-only">Open sidebar</span>
-              <Bars3Icon className="h-6 w-6" aria-hidden="true" />
+              <List weight="duotone" className="h-6 w-6" />
             </button>
+            <span className="text-sm font-bold text-slate-900">Admin Console</span>
           </div>
-          
+
           {/* Page content */}
-          <div className="p-4 sm:p-6 lg:p-8">
+          <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
             {children}
           </div>
         </main>
@@ -89,7 +91,5 @@ export default function AdminLayout({
     )
   }
 
-  // This is a fallback, should not reach here due to redirects
   return null
 }
-

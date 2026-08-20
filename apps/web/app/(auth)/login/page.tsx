@@ -1,42 +1,46 @@
-import { GalleryVerticalEnd } from "lucide-react"
-import Link from "next/link"
-import { LoginForm } from "@/components/login-form"
+import Link from 'next/link'
+import { LoginForm } from '@/components/login-form'
+import { LinkSimple } from '@phosphor-icons/react/dist/ssr'
 import Branding from '@/public/images/Branding.png'
 
 export default function LoginPage() {
   return (
-    <div className="grid min-h-svh lg:grid-cols-2">
-      {/* --- Left Panel (Form) --- */}
-      <div className="flex flex-col gap-4 p-6 md:p-10">
-        <div className="flex justify-center gap-2 md:justify-start">
-          <Link href="/" className="flex items-center gap-2 font-medium">
-            <div className="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md">
-              <GalleryVerticalEnd className="size-4" />
+    <div className="grid min-h-svh lg:grid-cols-2 bg-[#f8fafc]">
+      {/* Left Panel (Form) */}
+      <div className="flex flex-col justify-between p-6 sm:p-10 lg:p-12">
+        <div>
+          <Link href="/" className="inline-flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-600 shadow-xs">
+              <LinkSimple weight="duotone" className="h-5 w-5 text-white" />
             </div>
-            LinkShorty
+            <span className="text-lg font-bold tracking-tight text-slate-900">
+              LinkShorty
+            </span>
           </Link>
         </div>
-        <div className="flex flex-1 items-center justify-center">
-          <div className="w-full max-w-xs">
+
+        <div className="flex flex-1 items-center justify-center py-10">
+          <div className="w-full max-w-sm rounded-3xl border border-slate-200/80 bg-white p-8 shadow-xl shadow-slate-200/40">
             <LoginForm />
           </div>
         </div>
-      </div>
 
-      {/* --- Right Panel (Image/Branding) --- */}
-      <div className="hidden lg:flex items-center justify-center bg-gray-100">
-        <div className="h-full w-full rounded-lg bg-gray-200 overflow-hidden">
-          <img
-            src={Branding.src}
-            alt="Branding Image"
-            className="w-full h-full object-cover rounded-lg"
-          />
+        <div className="text-center text-xs text-slate-400">
+          &copy; {new Date().getFullYear()} LinkShorty. Secure short links & real-time analytics.
         </div>
       </div>
 
-
-
+      {/* Right Panel (Branding) */}
+      <div className="hidden lg:flex items-center justify-center bg-slate-100 p-8">
+        <div className="h-full w-full rounded-3xl overflow-hidden shadow-2xl border border-slate-200/80">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={Branding.src}
+            alt="LinkShorty Branding"
+            className="w-full h-full object-cover"
+          />
+        </div>
+      </div>
     </div>
   )
 }
-

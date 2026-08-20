@@ -1,107 +1,85 @@
 'use client'
 
 import Link from 'next/link'
-import { Github, Twitter, Linkedin } from 'lucide-react'
+import {
+  LinkSimple,
+  GithubLogo,
+  TwitterLogo,
+  LinkedinLogo,
+} from '@phosphor-icons/react'
 
-// Define navigation sections
-const navigation = {
-  product: [
-    { name: 'Features', href: '#features-section' },
-    { name: 'Pricing', href: '#pricing-section' },
-    { name: 'Sign Up', href: '/signup' },
-    { name: 'Log In', href: '/login' },
-  ],
-  company: [
-    { name: 'About', href: '/about' },
-    { name: 'Blog (Coming Soon)', href: '#' },
-    { name: 'Contact', href: '/contact' },
-  ],
-  legal: [
-    { name: 'Privacy Policy', href: '#' },
-    { name: 'Terms of Service', href: '#' },
-  ],
-}
+const navLinks = [
+  { name: 'Features', href: '/#features-section' },
+  { name: 'Pricing', href: '/#pricing-section' },
+  { name: 'About', href: '/about' },
+  { name: 'Contact', href: '/contact' },
+  { name: 'Privacy Policy', href: '#' },
+  { name: 'Terms of Service', href: '#' },
+]
 
 export function Footer() {
   return (
-    <footer className="bg-[#39383b]" aria-labelledby="footer-heading">
-      <h2 id="footer-heading" className="sr-only">
-        Footer
-      </h2>
-      <div className="mx-auto max-w-7xl px-6 pb-8 pt-6 sm:pt-20 lg:px-8 lg:pt-10">
-        <div className="lg:grid lg:grid-cols-3 lg:gap-8">
-          {/* Brand & Socials Section */}
-          <div className="space-y-4">
-            <Link href="/" className="flex items-center gap-2">
-              <svg className="h-10 w-auto text-white/70" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
-              </svg>
-              <span className="text-lg font-semibold text-white">LinkShorty</span>
-            </Link>
-            <p className="text-sm leading-6 text-white/75">
-              Shorten, share, and analyze your links with precision.
-            </p>
-            <div className="flex space-x-6">
-              <a href="#" className="text-white/60 hover:text-white">
-                <span className="sr-only">GitHub</span>
-                <Github className="h-6 w-6" aria-hidden="true" />
-              </a>
-              <a href="#" className="text-white/60 hover:text-white">
-                <span className="sr-only">Twitter</span>
-                <Twitter className="h-6 w-6" aria-hidden="true" />
-              </a>
-              <a href="#" className="text-white/60 hover:text-white">
-                <span className="sr-only">LinkedIn</span>
-                <Linkedin className="h-6 w-6" aria-hidden="true" />
-              </a>
-            </div>
+    <footer className="border-t border-slate-200 bg-white text-slate-500 py-8 px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl flex flex-col md:flex-row items-center justify-between gap-6">
+        {/* Brand */}
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-600 shadow-xs">
+            <LinkSimple weight="duotone" className="h-4 w-4 text-white" />
           </div>
-
-          {/* Navigation Links Grid */}
-          <div className="mt-16 grid grid-cols-2 gap-8 md:grid-cols-3 lg:col-span-2 lg:mt-0">
-            <div>
-              <h3 className="text-sm font-semibold leading-6 text-white">Product</h3>
-              <ul role="list" className="mt-6 space-y-4">
-                {navigation.product.map((item) => (
-                  <li key={item.name}>
-                    <Link href={item.href} className="text-sm leading-6 text-gray-300 hover:text-white">
-                      {item.name}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold leading-6 text-white">Company</h3>
-              <ul role="list" className="mt-6 space-y-4">
-                {navigation.company.map((item) => (
-                  <li key={item.name}>
-                    <Link href={item.href} className="text-sm leading-6 text-gray-300 hover:text-white">
-                      {item.name}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold leading-6 text-white">Legal</h3>
-              <ul role="list" className="mt-6 space-y-4">
-                {navigation.legal.map((item) => (
-                  <li key={item.name}>
-                    <Link href={item.href} className="text-sm leading-6 text-gray-300 hover:text-white">
-                      {item.name}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
+          <span className="text-sm font-bold tracking-tight text-slate-900">
+            LinkShorty
+          </span>
+          <span className="text-xs text-slate-400 hidden sm:inline">
+            · Fast, secure link shortening & analytics
+          </span>
         </div>
 
-        <div className="mt-16 border-t border-white/10 pt-8 sm:mt-20 lg:mt-24">
-          <p className="text-xs leading-5 text-white/50">
-            &copy; {new Date().getFullYear()} LinkShorty. All rights reserved.
-          </p>
+        {/* Links */}
+        <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs font-medium text-slate-600">
+          {navLinks.map((item) => (
+            <Link
+              key={item.name}
+              href={item.href}
+              className="hover:text-indigo-600 transition-colors"
+            >
+              {item.name}
+            </Link>
+          ))}
+        </div>
+
+        {/* Socials & Copyright */}
+        <div className="flex items-center gap-4 text-xs text-slate-400">
+          <div className="flex items-center gap-3">
+            <a
+              href="https://github.com"
+              target="_blank"
+              rel="noreferrer"
+              aria-label="GitHub"
+              className="hover:text-slate-700 transition-colors"
+            >
+              <GithubLogo weight="duotone" className="h-4 w-4" />
+            </a>
+            <a
+              href="https://twitter.com"
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Twitter"
+              className="hover:text-slate-700 transition-colors"
+            >
+              <TwitterLogo weight="duotone" className="h-4 w-4" />
+            </a>
+            <a
+              href="https://linkedin.com"
+              target="_blank"
+              rel="noreferrer"
+              aria-label="LinkedIn"
+              className="hover:text-slate-700 transition-colors"
+            >
+              <LinkedinLogo weight="duotone" className="h-4 w-4" />
+            </a>
+          </div>
+          <span className="text-slate-300">|</span>
+          <span>&copy; {new Date().getFullYear()} LinkShorty</span>
         </div>
       </div>
     </footer>

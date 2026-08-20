@@ -1,50 +1,50 @@
 'use client'
 
 import { Fragment } from 'react'
-import Link from '../../node_modules/next/link'
-import { usePathname } from '../../node_modules/next/navigation'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { Dialog, DialogPanel, Transition, TransitionChild } from '@headlessui/react'
 import {
-  Home,
+  House,
   Users,
-  Link as LinkIcon,
-  LogOut,
-  Mail,
-} from 'lucide-react'
-import { XMarkIcon } from '@heroicons/react/24/outline'
+  LinkSimple,
+  EnvelopeSimple,
+  SignOut,
+  X,
+} from '@phosphor-icons/react'
 
-// 3. ADD THE NEW NAVIGATION ITEM
 const navItems = [
-  { name: 'Overview', href: '/admin', icon: Home },
+  { name: 'Overview', href: '/admin', icon: House },
   { name: 'Users', href: '/admin/users', icon: Users },
-  { name: 'Links', href: '/admin/links', icon: LinkIcon },
-  { name: 'Submissions', href: '/admin/submissions', icon: Mail }, // <-- NEW
+  { name: 'Links', href: '/admin/links', icon: LinkSimple },
+  { name: 'Submissions', href: '/admin/submissions', icon: EnvelopeSimple },
 ]
 
-// Helper function to conditionally apply CSS classes
 function classNames(...classes: (string | boolean | undefined)[]) {
   return classes.filter(Boolean).join(' ')
 }
 
-// --- This is the reusable navigation content ---
 function NavigationContent() {
   const pathname = usePathname()
 
   return (
-    <>
-      {/* Sidebar Header */}
-      <div className="flex h-16 shrink-0 items-center border-b border-gray-200 px-6">
-        <h2 className="text-lg font-semibold text-gray-600">
-          LinkShorty
-          <span className="ml-1.5 rounded-md bg-gray-100 px-2 py-0.5 text-xs font-bold text-gray-700">
+    <div className="flex h-full flex-col">
+      {/* Sidebar Header (matching admin.png) */}
+      <div className="flex h-16 shrink-0 items-center justify-between border-b border-slate-100 px-6">
+        <div className="flex items-center gap-2">
+          <span className="text-lg font-bold tracking-tight text-indigo-600">
+            LinkShorty
+          </span>
+          <span className="rounded-md bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-700">
             Admin
           </span>
-        </h2>
+        </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
-        <nav className="p-4">
-          <ul role="list" className="space-y-2">
+      {/* Navigation Links */}
+      <div className="flex-1 overflow-y-auto px-4 py-6">
+        <nav>
+          <ul role="list" className="space-y-1">
             {navItems.map((item) => {
               const isActive =
                 item.href === '/admin'
@@ -56,18 +56,17 @@ function NavigationContent() {
                   <Link
                     href={item.href}
                     className={classNames(
-                      'group flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium',
                       isActive
-                        ? 'bg-gray-50 text-gray-700'
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900',
+                        ? 'bg-indigo-50 text-indigo-600 font-semibold'
+                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-medium',
+                      'group flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm transition-colors',
                     )}
                   >
                     <item.icon
+                      weight="duotone"
                       className={classNames(
-                        'h-5 w-5 shrink-0',
-                        isActive
-                          ? 'text-gray-600'
-                          : 'text-gray-400 group-hover:text-gray-500',
+                        isActive ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600',
+                        'h-5 w-5 shrink-0 transition-colors',
                       )}
                     />
                     {item.name}
@@ -79,21 +78,20 @@ function NavigationContent() {
         </nav>
       </div>
 
-      {/* Sidebar Footer (Exit Admin) - This is no longer inside the scroll */}
-      <div className="border-t border-gray-200 p-4">
+      {/* Sidebar Footer (Exit Admin) matching admin.png */}
+      <div className="border-t border-slate-100 p-4">
         <Link
-          href="/"
-          className="group flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+          href="/dashboard"
+          className="group flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors"
         >
-          <LogOut className="h-5 w-5 rotate-180 text-gray-400 group-hover:text-gray-500" />
+          <SignOut weight="duotone" className="h-5 w-5 text-slate-400 group-hover:text-slate-600" />
           Exit Admin
         </Link>
       </div>
-    </>
+    </div>
   )
 }
 
-// --- Main Component ---
 export function AdminSidebar({
   sidebarOpen,
   setSidebarOpen,
@@ -103,56 +101,42 @@ export function AdminSidebar({
 }) {
   return (
     <>
-      {/* --- Mobile Sidebar (Slide-out) --- */}
+      {/* Mobile Drawer */}
       <Transition show={sidebarOpen} as={Fragment}>
         <Dialog className="relative z-50 lg:hidden" onClose={setSidebarOpen}>
           <TransitionChild
             as={Fragment}
-            enter="transition-opacity ease-linear duration-300"
+            enter="transition-opacity ease-linear duration-200"
             enterFrom="opacity-0"
             enterTo="opacity-100"
-            leave="transition-opacity ease-linear duration-300"
+            leave="transition-opacity ease-linear duration-200"
             leaveFrom="opacity-100"
             leaveTo="opacity-0"
           >
-            <div className="fixed inset-0 bg-gray-900/80" />
+            <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm" />
           </TransitionChild>
 
           <div className="fixed inset-0 flex">
             <TransitionChild
               as={Fragment}
-              enter="transition ease-in-out duration-300 transform"
+              enter="transition ease-in-out duration-200 transform"
               enterFrom="-translate-x-full"
               enterTo="translate-x-0"
-              leave="transition ease-in-out duration-300 transform"
+              leave="transition ease-in-out duration-200 transform"
               leaveFrom="translate-x-0"
               leaveTo="-translate-x-full"
             >
-              <DialogPanel className="relative mr-16 flex w-full max-w-xs flex-1">
-                <TransitionChild
-                  as={Fragment}
-                  enter="ease-in-out duration-300"
-                  enterFrom="opacity-0"
-                  enterTo="opacity-100"
-                  leave="ease-in-out duration-300"
-                  leaveFrom="opacity-100"
-                  leaveTo="opacity-0"
-                >
-                  <div className="absolute left-full top-0 flex w-16 justify-center pt-5">
-                    <button
-                      type="button"
-                      className="-m-2.5 p-2.5"
-                      onClick={() => setSidebarOpen(false)}
-                    >
-                      <span className="sr-only">Close sidebar</span>
-                      {/* 4. REPLACED 'MarsIcon' with 'XMarkIcon' */}
-                      <XMarkIcon
-                        className="h-6 w-6 text-white"
-                        aria-hidden="true"
-                      />
-                    </button>
-                  </div>
-                </TransitionChild>
+              <DialogPanel className="relative mr-16 flex w-full max-w-xs flex-1 bg-white">
+                <div className="absolute right-0 top-0 -mr-12 pt-4">
+                  <button
+                    type="button"
+                    className="rounded-lg p-2 text-white hover:text-slate-200"
+                    onClick={() => setSidebarOpen(false)}
+                  >
+                    <span className="sr-only">Close sidebar</span>
+                    <X weight="bold" className="h-5 w-5" />
+                  </button>
+                </div>
                 <div className="flex h-full grow flex-col bg-white">
                   <NavigationContent />
                 </div>
@@ -162,11 +146,9 @@ export function AdminSidebar({
         </Dialog>
       </Transition>
 
-      {/* --- Desktop Sidebar (Static) --- */}
-      <aside className="hidden lg:flex lg:h-screen lg:w-64 lg:shrink-0 lg:flex-col lg:border-r lg:border-gray-200 lg:bg-white">
-        <div className="flex h-full flex-col">
-          <NavigationContent />
-        </div>
+      {/* Desktop Sidebar (Static) */}
+      <aside className="hidden lg:flex lg:h-screen lg:w-64 lg:shrink-0 lg:flex-col lg:border-r lg:border-slate-200/80 lg:bg-white">
+        <NavigationContent />
       </aside>
     </>
   )

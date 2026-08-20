@@ -4,8 +4,10 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
 export interface Link {
   id: number;
   original_url: string;
+  long_url?: string;
   short_code: string;
   clicks: number;
+  click_count?: number;
   created_at: string;
   owner_id: number;
   tag?: string | null;
@@ -17,6 +19,8 @@ export interface Link {
 export interface LinkStats {
   short_code: string;
   total_clicks: number;
+  original_url?: string;
+  target_url?: string;
   tag?: string | null;
   created_at: string;
   last_clicked_at?: string | null;

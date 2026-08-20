@@ -157,6 +157,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </li>
         )
       })}
+
+      {user?.is_superuser && (
+        <li className="pt-2 border-t border-slate-100 mt-2">
+          <Link
+            href="/admin"
+            onClick={() => setSidebarOpen(false)}
+            className="group flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-indigo-700 bg-indigo-50/60 hover:bg-indigo-100/80 transition-colors"
+          >
+            <ShieldCheck weight="duotone" className="h-5 w-5 text-indigo-600 shrink-0" />
+            <span>Admin Console</span>
+          </Link>
+        </li>
+      )}
     </ul>
   )
 

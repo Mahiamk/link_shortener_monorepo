@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, computed_field
-from typing import List, Optional
+from typing import List, Optional, Dict
 from datetime import datetime
 
 
@@ -8,13 +8,13 @@ from datetime import datetime
 #------------
 # Schema for creating a new user
 class UserCreate(BaseModel):
-    email: str
+    email: EmailStr
     password: str
 
 # Schema for responding with user info (omits password)
 class User(BaseModel):
     id: int
-    email: str
+    email: EmailStr
 
     class Config:
         from_attributes = True  # Pydantic v2
@@ -34,9 +34,9 @@ class LinkOutCount(BaseModel):
     id: int
     original_url: str
     short_code: str
-    owner_id: int
+    owner_id: Optional[int] = None
     created_at: datetime
-    clicks: int  # number of clicks
+    clicks: int = 0  # number of clicks
 
     class Config:
         from_attributes = True  # Pydantic v2
@@ -46,8 +46,8 @@ class LinkOutCount(BaseModel):
 #------------
 # Schema for creating a new link
 class LinkBase(BaseModel):
-  id: int
-  original_url: str
+    id: int
+    original_url: str
   
 class LinkCreate(LinkBase):
     pass
@@ -55,11 +55,12 @@ class LinkCreate(LinkBase):
 # Schema for responding with link info
 class Link(LinkBase):
     short_code: str
-    clicks: int
+    clicks: int = 0
     created_at: datetime
-    owner_id: int
+    owner_id: Optional[int] = None
     tag: Optional[str] = None
     expires_at: Optional[datetime] = None
+
     @computed_field
     @property
     def is_expired(self) -> bool:
@@ -75,7 +76,8 @@ class Link(LinkBase):
         delta = self.expires_at - datetime.utcnow()
         return max(delta.days, 0) # Return 0 if it's already expired
 
-    owner: UserOut 
+    owner: Optional[UserOut] = None
+
     class Config:
         from_attributes = True
         
@@ -94,9 +96,9 @@ class LinkOut(BaseModel):
     id: int
     original_url: str
     short_code: str
-    owner_id: int
+    owner_id: Optional[int] = None
     created_at: datetime
-    clicks:int = 0
+    clicks: int = 0
 
     class Config:
         from_attributes = True
@@ -121,10 +123,8 @@ class ClickOverTimeStat(BaseModel):
 class BreakdownStat(BaseModel):
     """
     Schema for representing a breakdown by category (e.g., browser, device).
-    Uses Dict[str, int] for dynamic categories like {"Chrome": 100, "Safari": 50}.
     """
-   
-    pass 
+    data: Dict[str, int] = {}
   
 class ContactSubmissionCreate(BaseModel):
     firstName: str

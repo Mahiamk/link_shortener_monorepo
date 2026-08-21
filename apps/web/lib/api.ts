@@ -1,4 +1,5 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const RAW_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_URL = RAW_API_URL.split(',')[0].trim().replace(/\/+$/, '');
 
 // ------ Types ------
 export interface Link {
@@ -9,13 +10,14 @@ export interface Link {
   clicks: number;
   click_count?: number;
   created_at: string;
-  owner_id: number;
+  owner_id?: number | null;
   tag?: string | null;
   expires_at?: string | null;
   is_expired?: boolean;
   expires_in_days?: number;
-  owner?: User; 
+  owner?: User | null; 
 }
+
 export interface LinkStats {
   short_code: string;
   total_clicks: number;
@@ -29,6 +31,7 @@ export interface LinkStats {
   by_browser: Record<string, number>;
   by_device: Record<string, number>;
 }
+
 export interface User {
   id: number;
   email: string;
@@ -43,13 +46,23 @@ export interface AdminStats {
   total_links: number;
   total_clicks: number;
 }
-// ---  Analysis Types ---
+
+// --- Analysis Types ---
 export interface ClickOverTimeStat {
   date: string;
   count: number;
 }
-// Type for breakdown data (e.g., {"Chrome": 100, "Safari": 50})
+
 export type BreakdownStats = Record<string, number>;
+
+export interface ContactSubmission {
+  id: number;
+  first_name: string;
+  last_name: string;
+  email: string;
+  message: string;
+  created_at: string;
+}
 
 export const apiFetch = async (
   endpoint: string,
@@ -69,17 +82,23 @@ export const apiFetch = async (
     },
   };
 
-  const response = await fetch(`${API_URL}${endpoint}`, mergedOptions);
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  const response = await fetch(`${API_URL}${cleanEndpoint}`, mergedOptions);
 
   if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`API call failed: ${response.statusText} - ${text}`);
+    let errorDetail = `API call failed: ${response.statusText || response.status}`;
+    try {
+      const errorJson = await response.json();
+      errorDetail = errorJson.detail || errorDetail;
+    } catch {
+      // Keep statusText fallback
+    }
+    throw new Error(errorDetail);
   }
-
 
   // Check for "No Content" *before* trying to parse JSON.
   if (response.status === 204) {
-    return null; // Successfully deleted, return null
+    return null;
   }
 
   const contentType = response.headers.get("content-type") || "";
@@ -107,20 +126,18 @@ export const login = async (email: string, password: string) => {
     try {
       const errorJson = await response.json();
       errorDetail = errorJson.detail || `Login failed with status: ${response.status}`;
-    } catch (err) {
-      console.error("Failed to parse error response JSON:", err);
-      // If response wasn't JSON, use the status text
+    } catch {
       errorDetail = `Login failed: ${response.statusText || response.status}`;
     }
-    console.error("Login failed:", errorDetail); // console log for debugging
     throw new Error(errorDetail);
   }
 
   return response.json();
 };
+
 export const register = async (email: string, password: string) => {
   const response = await fetch(
-    `${API_URL}/auth/register/`,
+    `${API_URL}/auth/register`,
     {
       method: "POST",
       headers: {
@@ -131,23 +148,26 @@ export const register = async (email: string, password: string) => {
   );
 
   if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
-    const message = err.detail || err.message || `${response.status}`;
+    let message = "Registration failed.";
+    try {
+      const err = await response.json();
+      message = err.detail || err.message || message;
+    } catch {
+      message = `Registration failed with status ${response.status}`;
+    }
     throw new Error(message);
   }
 
   return response.json();
 };
 
-// ---- Links API functions
+// ---- Links API functions ----
 
-// ---- Get all links for the user ----
 export const getMyLinks = async (token: string): Promise<Link[]> => {
   const data = await apiFetch("/links/", {}, token);
   return data || []; 
 };
 
-// ---- Create a new link ----
 export const createLink = (
   original_url: string,
   token: string,
@@ -162,7 +182,6 @@ export const createLink = (
     token
   );
 
-// Delete a link by ID
 export const deleteLink = (linkId: number, token: string) =>
   apiFetch(
     `/links/${linkId}`,
@@ -172,7 +191,6 @@ export const deleteLink = (linkId: number, token: string) =>
     token
   );
 
-// Get expired links
 export const getExpiredLinks = (token: string): Promise<Link[]> => {
   return apiFetch("/links/expired", {}, token);
 };
@@ -204,17 +222,16 @@ export const getAllAdminLinks = (token: string): Promise<Link[]> => {
 
 // ---- Admin User Registration Stats ----
 export interface RegistrationStat {
-  date: string; // YYYY-MM-DD or similar
+  date: string;
   count: number;
 }
 
 export const getUserRegistrationStats = (
   token: string,
-  interval: 'day' | 'month' | 'year' = 'day' // Default to daily
+  interval: 'day' | 'month' | 'year' = 'day'
 ): Promise<RegistrationStat[]> => {
   return apiFetch(`/admin/user-registration-stats?interval=${interval}`, {}, token);
 };
-
 
 // --- User Analysis Functions ---
 
@@ -279,24 +296,54 @@ export const adminDeleteLink = (
   );
 };
 
+// --- Contact Submissions ---
+
+export const getContactSubmissions = (token: string): Promise<ContactSubmission[]> => {
+  return apiFetch('/api/contact-submissions/', {}, token);
+};
+
+export const deleteContactSubmission = (token: string, id: number): Promise<ContactSubmission> => {
+  return apiFetch(`/api/contact-submissions/${id}`, { method: 'DELETE' }, token);
+};
+
+export const submitContactForm = (formData: {
+  firstName: string;
+  lastName: string;
+  email: string;
+  message: string;
+}) => {
+  return apiFetch('/api/contact-submissions/', {
+    method: 'POST',
+    body: JSON.stringify(formData),
+  });
+};
+
+// --- Public Endpoints ---
+
 export const getPublicStats = async (): Promise<{ total_links: number; total_clicks: number }> => {
-  const response = await fetch(`${API_URL}/links/public/stats`)
-  if (!response.ok) throw new Error('Failed to fetch stats')
-  return response.json()
-}
+  const response = await fetch(`${API_URL}/links/public/stats`);
+  if (!response.ok) throw new Error('Failed to fetch stats');
+  return response.json();
+};
 
 export const publicShortenUrl = async (url: string): Promise<{ short_code: string }> => {
   const response = await fetch(`${API_URL}/links/public/shorten`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ url }),
-  })
+  });
   if (!response.ok) {
-    const err = await response.json().catch(() => ({}))
-    throw new Error(err.detail || 'Failed to shorten URL. Try again.')
+    let errorDetail = 'Failed to shorten URL. Try again.';
+    try {
+      const err = await response.json();
+      errorDetail = err.detail || errorDetail;
+    } catch {
+      // Fallback
+    }
+    throw new Error(errorDetail);
   }
-  return response.json()
-}
+  return response.json();
+};
 
 export async function loginOrRegisterWithGoogle(firebaseToken: string) {
   const response = await fetch(`${API_URL}/auth/google`, {
@@ -308,8 +355,14 @@ export async function loginOrRegisterWithGoogle(firebaseToken: string) {
   });
 
   if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.detail || 'Google sign-in failed');
+    let errorMsg = 'Google sign-in failed';
+    try {
+      const errorData = await response.json();
+      errorMsg = errorData.detail || errorMsg;
+    } catch {
+      // Fallback
+    }
+    throw new Error(errorMsg);
   }
   
   return response.json(); 

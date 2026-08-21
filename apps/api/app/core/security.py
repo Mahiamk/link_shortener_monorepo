@@ -1,10 +1,10 @@
-from http.client import HTTPException
+from fastapi import HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from app.core.config import settings
-import jwt
+
 # --- Password Hashing ---
 
 # We use bcrypt as the hashing algorithm
@@ -17,7 +17,10 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 def get_password_hash(password: str) -> str:
     """Hashes a plain-text password."""
     if len(password) > 72:
-        raise HTTPException(status_code=400, detail="Password too long (max 72 characters)")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password too long (max 72 characters)"
+        )
     return pwd_context.hash(password)
 
 
@@ -72,5 +75,5 @@ def verify_verification_token(token: str) -> str | None:
         if email is None:
             return None
         return email
-    except jwt.PyJWTError:
+    except JWTError:
         return None

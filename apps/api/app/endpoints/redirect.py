@@ -8,12 +8,7 @@ from app import crud
 
 router = APIRouter()
 
-def get_db():
-    db = database.SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+from app.db.database import get_db
 
 # --- Helper functions ---
 def parse_browser(user_agent_str: str) -> str:

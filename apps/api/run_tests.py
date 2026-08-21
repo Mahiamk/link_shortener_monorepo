@@ -229,5 +229,106 @@ class TestSecurityAndAPI(unittest.TestCase):
         self.assertEqual(redirect_res.status_code, 307)
         self.assertEqual(redirect_res.headers["location"], "https://example.com/target")
 
+    # --------------------------------------------------------------------------
+    # 6. Stripe Payments & Pro Plan Upgrades
+    # --------------------------------------------------------------------------
+    def test_stripe_checkout_session_creation(self):
+        """Test Stripe checkout session creation."""
+        from unittest.mock import patch, MagicMock
+
+        mock_session = MagicMock()
+        mock_session.url = "https://checkout.stripe.com/c/pay/cs_test_123"
+        mock_session.id = "cs_test_123"
+
+        with patch("stripe.checkout.Session.create", return_value=mock_session):
+            with patch("app.core.config.settings.STRIPE_SECRET_KEY", "sk_test_mock_key"):
+                res = self.client.post(
+                    "/payments/create-checkout-session",
+                    json={"plan": "pro", "billing_cycle": "monthly"},
+                    headers={"Authorization": f"Bearer {self.token_user_a}"}
+                )
+                self.assertEqual(res.status_code, 200)
+                data = res.json()
+                self.assertEqual(data["checkout_url"], "https://checkout.stripe.com/c/pay/cs_test_123")
+                self.assertEqual(data["session_id"], "cs_test_123")
+
+    def test_stripe_webhook_checkout_completed_upgrades_user(self):
+        """Test Stripe webhook checkout.session.completed upgrades user to Pro."""
+        # Initial plan is free
+        user_before = self.db.query(models.User).filter(models.User.id == 1).first()
+        self.assertEqual(user_before.plan, "free")
+
+        webhook_payload = {
+            "type": "checkout.session.completed",
+            "data": {
+                "object": {
+                    "client_reference_id": "1",
+                    "customer": "cus_12345",
+                    "subscription": "sub_67890",
+                    "metadata": {
+                        "user_id": "1",
+                        "plan": "pro"
+                    }
+                }
+            }
+        }
+
+        res = self.client.post("/payments/webhook", json=webhook_payload)
+        self.assertEqual(res.status_code, 200)
+
+        # Refresh DB
+        self.db.expire_all()
+        user_after = self.db.query(models.User).filter(models.User.id == 1).first()
+        self.assertEqual(user_after.plan, "pro")
+        self.assertEqual(user_after.stripe_customer_id, "cus_12345")
+        self.assertEqual(user_after.stripe_subscription_id, "sub_67890")
+
+    def test_stripe_webhook_subscription_deleted_downgrades_user(self):
+        """Test Stripe webhook customer.subscription.deleted downgrades user to Free."""
+        # Set user to pro first
+        user = self.db.query(models.User).filter(models.User.id == 1).first()
+        user.plan = "pro"
+        user.stripe_customer_id = "cus_downgrade_test"
+        self.db.commit()
+
+        webhook_payload = {
+            "type": "customer.subscription.deleted",
+            "data": {
+                "object": {
+                    "customer": "cus_downgrade_test"
+                }
+            }
+        }
+
+        res = self.client.post("/payments/webhook", json=webhook_payload)
+        self.assertEqual(res.status_code, 200)
+
+        self.db.expire_all()
+        user_after = self.db.query(models.User).filter(models.User.id == 1).first()
+        self.assertEqual(user_after.plan, "free")
+
+    def test_verify_session_endpoint_upgrades_plan(self):
+        """Test POST /payments/verify-session/{id} immediately updates user plan."""
+        from unittest.mock import patch, MagicMock
+
+        mock_session = MagicMock()
+        mock_session.payment_status = "paid"
+        mock_session.status = "complete"
+        mock_session.customer = "cus_verified_123"
+        mock_session.subscription = "sub_verified_123"
+        mock_session.metadata = {"user_id": "1", "plan": "enterprise"}
+        mock_session.customer_email = "usera@example.com"
+
+        with patch("stripe.checkout.Session.retrieve", return_value=mock_session):
+            with patch("app.core.config.settings.STRIPE_SECRET_KEY", "sk_test_mock_key"):
+                res = self.client.post(
+                    "/payments/verify-session/cs_test_abc123",
+                    headers={"Authorization": f"Bearer {self.token_user_a}"}
+                )
+                self.assertEqual(res.status_code, 200)
+                data = res.json()
+                self.assertEqual(data["status"], "success")
+                self.assertEqual(data["plan"], "enterprise")
+
 if __name__ == "__main__":
     unittest.main()

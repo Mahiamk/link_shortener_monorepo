@@ -1,22 +1,27 @@
+import os
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from typing import ClassVar
+from typing import ClassVar, Optional
+
 class Settings(BaseSettings):
-    # This tells BaseSettings to look for an .env file
     model_config = SettingsConfigDict(
-        env_file="../.env", # Path to your .env file
-        env_file_encoding='utf-8'
+        env_file=os.path.join(os.path.dirname(__file__), "../.env"),
+        env_file_encoding='utf-8',
+        extra='ignore'
     )
     
-    # These variables MUST match the names in .env file
     SECRET_KEY: str = "xd5Wg+/OBNiA6AA2Vm6QshwFeOUkHI+KQwdB56aZSeP75mzqoLzzuI/FvToqhJE+"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 300
     SUPERUSER_EMAILS: ClassVar[list[str]] = ["admin@gmail.com"]
-    GOOGLE_APPLICATION_CREDENTIALS: str = "/Users/anwarmohammedkoji/link-shortener/apps/api/app/credentials/web-app-anwar-firebase-adminsdk-fbsvc-f5cb9d56ee.json"
+    GOOGLE_APPLICATION_CREDENTIALS: Optional[str] = None
     
-    # DATABASE_URL is already loaded in database.py, but
-    # it's good practice to have all env settings here.
-    DATABASE_URL: str
+    DATABASE_URL: Optional[str] = None
+    FRONTEND_URL: str = "http://localhost:3000"
 
-# Create a single, importable instance of your settings
+    # Stripe Settings
+    STRIPE_SECRET_KEY: str = ""
+    STRIPE_WEBHOOK_SECRET: str = ""
+    STRIPE_PRO_PRICE_ID: str = ""
+    STRIPE_ENTERPRISE_PRICE_ID: str = ""
+
 settings = Settings()

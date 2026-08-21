@@ -10,6 +10,7 @@ import {
 } from '@phosphor-icons/react'
 import { Footer } from '@/components/Footer'
 import { Header } from '@/components/header/page'
+import { submitContactForm } from '@/lib/api'
 
 interface FormData {
   firstName: string
@@ -45,19 +46,7 @@ export default function ContactPage() {
     setFormStatus('submitting')
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:8000'
-      const response = await fetch(`${apiUrl}/api/contact-submissions/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      })
-
-      if (!response.ok) {
-        throw new Error('Form submission failed')
-      }
-
+      await submitContactForm(formData)
       setFormStatus('success')
       setTimeout(() => {
         setFormData({ firstName: '', lastName: '', email: '', message: '' })

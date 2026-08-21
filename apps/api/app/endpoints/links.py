@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from datetime import datetime, timedelta
 from urllib.parse import urlparse
 
-# Import your helpers
+# Import helpers
 from app import crud
 from app.db import schemas, models, database
 from app.core.security import oauth2_scheme
@@ -16,13 +16,7 @@ from app.core.limiter import limiter
 
 router = APIRouter()
 
-# --- Dependency to get DB ---
-def get_db():
-    db = database.SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+from app.db.database import get_db
 
 # --- Dependency to get the Current User (from Token) ---
 async def get_current_user(
@@ -30,7 +24,7 @@ async def get_current_user(
     db: Session = Depends(get_db)
 ) -> models.User:
     """
-    Decodes the JWT token, validates it, and returns the user.
+    Decodes the JWT token, validates it, and returns the active user.
     """
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -51,6 +45,13 @@ async def get_current_user(
     user = crud.get_user_by_email(db, email=email)
     if user is None:
         raise credentials_exception
+    
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Inactive user. Account has been deactivated.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
         
     return user
 
@@ -60,20 +61,20 @@ class LinkCreate(BaseModel):
     tag: Optional[str] = None
 
 
-# ── Public (unauthenticated) endpoints — MUST be defined before any /{param} routes ──
+# ── Public (unauthenticated) endpoints ────────────────────────────────────────
 
 class PublicShortenRequest(BaseModel):
     url: str
 
 
 @router.post("/public/shorten", status_code=status.HTTP_201_CREATED)
-@limiter.limit("10/hour")
+@limiter.limit("20/hour")
 async def public_shorten_link(
     request: Request,
     data: PublicShortenRequest,
     db: Session = Depends(get_db),
 ):
-    """Shorten a URL without authentication. Rate-limited to 10/hour per IP."""
+    """Shorten a URL without authentication. Rate-limited per IP."""
     if len(data.url) > 8192:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -125,7 +126,6 @@ async def get_user_links(
     Gets all links for the currently logged-in user.
     """
     links = crud.get_links_by_user(db=db, user_id=current_user.id)
-    
     return crud.convert_db_links_to_schemas(links)
 
 @router.post("/", response_model=schemas.Link)
@@ -137,6 +137,21 @@ async def create_link(
     """
     Creates a new short link for the currently logged-in user.
     """
+    if len(link.original_url) > 8192:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="URL is too long (max 8192 characters).",
+        )
+    try:
+        parsed = urlparse(link.original_url)
+        if parsed.scheme not in ("http", "https") or not parsed.netloc:
+            raise ValueError
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid URL. Must start with http:// or https://",
+        )
+
     new_link = crud.create_db_link(
         db=db,
         original_url=link.original_url,
@@ -146,7 +161,7 @@ async def create_link(
     return crud.convert_db_link_to_schema(new_link)
 
 @router.delete("/{link_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_link(
+async def delete_link_endpoint(
     link_id: int,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
@@ -154,16 +169,13 @@ async def delete_link(
     """
     Deletes a link owned by the current user.
     """
-    link_to_delete = crud.get_link_by_id_and_owner(db, link_id, current_user.id)
+    deleted = crud.delete_link(db, link_id, current_user.id)
     
-    if not link_to_delete:
+    if not deleted:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Link not found or you do not have permission to delete it"
         )
-    
-    db.delete(link_to_delete)
-    db.commit()
     return 
 
 @router.put("/{link_id}/extend", response_model=schemas.Link)
@@ -177,11 +189,14 @@ def extend_link_expiration(
     Extends a link's expiration date (Superuser only).
     """
     if not current_user.is_superuser:
-        raise HTTPException(status_code=403, detail="Permission denied")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized: Superuser permissions required"
+        )
 
     link = db.query(models.Link).filter(models.Link.id == link_id).first()
     if not link:
-        raise HTTPException(status_code=404, detail="Link not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Link not found")
 
     link.expires_at = datetime.utcnow() + timedelta(days=days)
     db.commit()
@@ -195,13 +210,16 @@ def get_expired_links(
     current_user: models.User = Depends(get_current_user)
 ):
     """
-    Gets all expired links (Superuser only).
+    Gets all expired links for the current user (or all if superuser).
     """
-    if not current_user.is_superuser:
-        raise HTTPException(status_code=403, detail="Permission denied")
-
     now = datetime.utcnow()
-    expired_links = db.query(models.Link).filter(models.Link.expires_at < now).all()
+    if current_user.is_superuser:
+        expired_links = db.query(models.Link).filter(models.Link.expires_at < now).all()
+    else:
+        expired_links = db.query(models.Link).filter(
+            models.Link.owner_id == current_user.id,
+            models.Link.expires_at < now
+        ).all()
     
     return crud.convert_db_links_to_schemas(expired_links)
 
@@ -226,16 +244,23 @@ def get_active_links(
 def get_link_stats(
     link_id: int, 
     db: Session = Depends(get_db), 
-    current_user=Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user)
 ):
     """
-    Gets detailed click statistics for a single link.
+    Gets detailed click statistics for a single link owned by the user (or any link if superuser).
     """
-    link = crud.get_link_by_id_and_owner(db, link_id, current_user.id)
-    if not link:
-        raise HTTPException(status_code=403, detail="Not authorized or link not found")
+    if current_user.is_superuser:
+        link = db.query(models.Link).filter(models.Link.id == link_id).first()
+    else:
+        link = crud.get_link_by_id_and_owner(db, link_id, current_user.id)
 
-    clicks = link.clicks
+    if not link:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Link not found or access denied"
+        )
+
+    clicks = link.clicks or []
     total_clicks = len(clicks)
 
     def group_by(clicks_list, attr):
@@ -247,6 +272,8 @@ def get_link_stats(
 
     return {
         "short_code": link.short_code,
+        "original_url": link.original_url,
+        "target_url": link.original_url,
         "total_clicks": total_clicks,
         "tag": link.tag,
         "created_at": link.created_at,
@@ -266,6 +293,3 @@ def delete_current_user(
     db.delete(current_user)
     db.commit()
     return
-
-
-

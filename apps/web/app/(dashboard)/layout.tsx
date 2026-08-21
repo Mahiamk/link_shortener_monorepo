@@ -10,12 +10,20 @@ import {
   ChartBar,
   SignOut,
   ShieldCheck,
-  CaretDown,
   List,
   X,
-  UserCircle,
+  Lightning,
+  Sparkle,
+  Crown,
+  CreditCard,
+  CircleNotch,
 } from '@phosphor-icons/react'
-import { getUserProfile, User } from '../../lib/api'
+import {
+  getUserProfile,
+  User,
+  createCheckoutSession,
+  createCustomerPortalSession,
+} from '../../lib/api'
 
 const navigation = [
   { name: 'Overview', href: '/dashboard', icon: House },
@@ -31,16 +39,57 @@ function getInitials(email: string) {
   return email.slice(0, 2).toUpperCase()
 }
 
+function PlanBadge({ plan }: { plan?: string }) {
+  const p = (plan || 'free').toLowerCase()
+  if (p === 'pro') {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 px-2 py-0.5 text-[10px] font-bold text-white shadow-xs">
+        <Lightning weight="fill" className="h-3 w-3" />
+        PRO
+      </span>
+    )
+  }
+  if (p === 'enterprise') {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-500 to-indigo-600 px-2 py-0.5 text-[10px] font-bold text-white shadow-xs">
+        <Crown weight="fill" className="h-3 w-3" />
+        ENTERPRISE
+      </span>
+    )
+  }
+  return (
+    <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
+      FREE
+    </span>
+  )
+}
+
 function UserMenu({
-  email,
-  isSuperuser,
+  user,
   onLogout,
 }: {
-  email: string
-  isSuperuser: boolean
+  user: User
   onLogout: () => void
 }) {
   const [isOpen, setIsOpen] = useState(false)
+  const [portalLoading, setPortalLoading] = useState(false)
+
+  const handleOpenPortal = async () => {
+    const token = localStorage.getItem('token')
+    if (!token) return
+    setPortalLoading(true)
+    try {
+      const res = await createCustomerPortalSession(token)
+      if (res.portal_url) {
+        window.location.href = res.portal_url
+      }
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Could not open billing portal.')
+    } finally {
+      setPortalLoading(false)
+    }
+  }
+
   return (
     <div className="relative">
       <button
@@ -48,29 +97,47 @@ function UserMenu({
         className="flex items-center gap-2 rounded-full p-1 text-left hover:bg-slate-100 transition-colors focus:outline-none"
       >
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white shadow-xs">
-          {getInitials(email)}
+          {getInitials(user.email)}
         </div>
       </button>
 
       {isOpen && (
         <div
-          className="absolute right-0 mt-2 w-56 rounded-2xl bg-white p-1.5 shadow-xl ring-1 ring-slate-200 z-50 overflow-hidden"
+          className="absolute right-0 mt-2 w-60 rounded-2xl bg-white p-2 shadow-xl ring-1 ring-slate-200 z-50 overflow-hidden"
           onMouseLeave={() => setIsOpen(false)}
         >
           <div className="px-3 py-2 border-b border-slate-100 mb-1">
-            <p className="truncate text-xs font-semibold text-slate-900">{email.split('@')[0]}</p>
-            <p className="truncate text-[11px] text-slate-400">{email}</p>
+            <div className="flex items-center justify-between gap-2">
+              <p className="truncate text-xs font-semibold text-slate-900">{user.email.split('@')[0]}</p>
+              <PlanBadge plan={user.plan} />
+            </div>
+            <p className="truncate text-[11px] text-slate-400 mt-0.5">{user.email}</p>
           </div>
 
-          {isSuperuser && (
+          {user.is_superuser && (
             <Link
               href="/admin"
               className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
               onClick={() => setIsOpen(false)}
             >
               <ShieldCheck weight="duotone" className="h-4 w-4 text-indigo-600" />
-              Admin Panel
+              Admin Console
             </Link>
+          )}
+
+          {user.stripe_customer_id && (
+            <button
+              onClick={handleOpenPortal}
+              disabled={portalLoading}
+              className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
+            >
+              {portalLoading ? (
+                <CircleNotch weight="bold" className="h-4 w-4 animate-spin text-indigo-600" />
+              ) : (
+                <CreditCard weight="duotone" className="h-4 w-4 text-indigo-600" />
+              )}
+              Manage Subscription
+            </button>
           )}
 
           <button
@@ -95,6 +162,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [user, setUser] = useState<User | null>(null)
   const [loadingUser, setLoadingUser] = useState(true)
+  const [upgradeLoading, setUpgradeLoading] = useState(false)
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -106,9 +174,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       try {
         const profile = await getUserProfile(token)
         setUser(profile)
-        if (profile?.is_superuser && !pathname.startsWith('/admin') && pathname === '/dashboard-redirect') {
-          router.push('/admin')
-        }
       } catch {
         localStorage.removeItem('token')
         localStorage.removeItem('userEmail')
@@ -124,6 +189,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     localStorage.removeItem('token')
     localStorage.removeItem('userEmail')
     router.push('/login')
+  }
+
+  const handleUpgradeToPro = async () => {
+    const token = localStorage.getItem('token')
+    if (!token) return
+    setUpgradeLoading(true)
+    try {
+      const res = await createCheckoutSession(token, 'pro', 'monthly')
+      if (res.checkout_url) {
+        window.location.href = res.checkout_url
+      }
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Could not start checkout.')
+    } finally {
+      setUpgradeLoading(false)
+    }
   }
 
   const renderNavLinks = () => (
@@ -173,6 +254,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     </ul>
   )
 
+  const isFreePlan = !user?.plan || user.plan.toLowerCase() === 'free'
+
   return (
     <div className="flex min-h-screen bg-[#f8fafc]">
       {/* Mobile Drawer */}
@@ -217,8 +300,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     <X weight="duotone" className="h-5 w-5" />
                   </button>
                 </div>
-                <div className="flex-1 overflow-y-auto px-4 py-6">
+                <div className="flex-1 overflow-y-auto px-4 py-6 flex flex-col justify-between">
                   {renderNavLinks()}
+
+                  {isFreePlan && (
+                    <div className="mt-8 rounded-2xl bg-gradient-to-br from-indigo-50 to-purple-50 p-4 border border-indigo-100 text-center">
+                      <Lightning weight="duotone" className="h-6 w-6 text-indigo-600 mx-auto mb-2" />
+                      <h4 className="text-xs font-bold text-slate-900">Upgrade to Pro</h4>
+                      <p className="text-[11px] text-slate-500 mt-1">Unlock deep D3 audience trends & priority analytics.</p>
+                      <button
+                        onClick={handleUpgradeToPro}
+                        disabled={upgradeLoading}
+                        className="mt-3 w-full rounded-xl bg-indigo-600 py-2 text-xs font-bold text-white shadow-xs hover:bg-indigo-700 disabled:opacity-60"
+                      >
+                        {upgradeLoading ? 'Opening Checkout...' : 'Upgrade ($9/mo)'}
+                      </button>
+                    </div>
+                  )}
                 </div>
               </DialogPanel>
             </TransitionChild>
@@ -239,8 +337,46 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </Link>
         </div>
 
-        <nav className="flex-1 px-4 py-6">
+        <nav className="flex-1 px-4 py-6 flex flex-col justify-between overflow-y-auto">
           {renderNavLinks()}
+
+          {/* Upgrade Banner / Pro Status */}
+          {user && (
+            <div className="mt-auto pt-6">
+              {isFreePlan ? (
+                <div className="rounded-2xl bg-gradient-to-br from-indigo-50/80 to-purple-50/80 p-4 border border-indigo-100 shadow-xs">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-indigo-600 text-white">
+                      <Lightning weight="fill" className="h-3.5 w-3.5" />
+                    </div>
+                    <span className="text-xs font-bold text-slate-900">Upgrade to Pro</span>
+                  </div>
+                  <p className="text-[11px] text-slate-600 leading-relaxed">
+                    Get deep traffic intelligence and overall breakdowns.
+                  </p>
+                  <button
+                    onClick={handleUpgradeToPro}
+                    disabled={upgradeLoading}
+                    className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl bg-indigo-600 py-2 text-xs font-bold text-white shadow-sm hover:bg-indigo-700 disabled:opacity-60 transition-all"
+                  >
+                    {upgradeLoading ? (
+                      <CircleNotch weight="bold" className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Sparkle weight="duotone" className="h-3.5 w-3.5" />
+                    )}
+                    <span>Upgrade for $9</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="rounded-2xl bg-emerald-50/80 p-3.5 border border-emerald-100 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <PlanBadge plan={user.plan} />
+                    <span className="text-xs font-semibold text-emerald-950">Plan Active</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </nav>
 
         {user && (
@@ -251,9 +387,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   {getInitials(user.email)}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-xs font-semibold text-slate-900">
-                    {user.email.split('@')[0]}
-                  </p>
+                  <div className="flex items-center gap-1.5">
+                    <p className="truncate text-xs font-semibold text-slate-900">
+                      {user.email.split('@')[0]}
+                    </p>
+                    <PlanBadge plan={user.plan} />
+                  </div>
                   <p className="truncate text-[10px] text-slate-400">{user.email}</p>
                 </div>
               </div>
@@ -286,8 +425,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="flex items-center gap-4">
             {user && (
               <UserMenu
-                email={user.email}
-                isSuperuser={Boolean(user.is_superuser)}
+                user={user}
                 onLogout={handleLogout}
               />
             )}

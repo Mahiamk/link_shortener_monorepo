@@ -38,6 +38,9 @@ export interface User {
   is_active: boolean;
   is_superuser: boolean;
   created_at: string;
+  plan?: string;
+  stripe_customer_id?: string | null;
+  stripe_subscription_id?: string | null;
 }
 
 // --- ADMIN STATS TYPE ---
@@ -316,6 +319,51 @@ export const submitContactForm = (formData: {
     method: 'POST',
     body: JSON.stringify(formData),
   });
+};
+
+// --- Stripe Payment & Subscription Methods ---
+
+export interface CheckoutResponse {
+  checkout_url: string;
+  session_id: string;
+}
+
+export interface VerifySessionResponse {
+  status: string;
+  plan: string;
+  message: string;
+}
+
+export interface BillingPortalResponse {
+  portal_url: string;
+}
+
+export const createCheckoutSession = (
+  token: string,
+  plan: 'pro' | 'enterprise',
+  billingCycle: 'monthly' | 'annually' = 'monthly'
+): Promise<CheckoutResponse> => {
+  return apiFetch('/payments/create-checkout-session', {
+    method: 'POST',
+    body: JSON.stringify({ plan, billing_cycle: billingCycle }),
+  }, token);
+};
+
+export const verifyPaymentSession = (
+  token: string,
+  sessionId: string
+): Promise<VerifySessionResponse> => {
+  return apiFetch(`/payments/verify-session/${sessionId}`, {
+    method: 'POST',
+  }, token);
+};
+
+export const createCustomerPortalSession = (
+  token: string
+): Promise<BillingPortalResponse> => {
+  return apiFetch('/payments/customer-portal', {
+    method: 'POST',
+  }, token);
 };
 
 // --- Public Endpoints ---

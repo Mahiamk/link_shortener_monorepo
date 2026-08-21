@@ -1,11 +1,15 @@
 'use client'
 
-import { useEffect, useState, useCallback, useMemo } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useState, useCallback, useMemo, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 import {
   getMyLinks,
   deleteLink,
+  verifyPaymentSession,
+  getUserProfile,
   Link as LinkType,
+  User,
 } from '@/lib/api'
 import {
   LinkSimple,
@@ -16,10 +20,12 @@ import {
   CheckCircle,
   Star,
   MagnifyingGlass,
-  Funnel,
   QrCode,
   ChartLineUp,
   CircleNotch,
+  Lightning,
+  Sparkle,
+  X,
 } from '@phosphor-icons/react'
 import { UrlShortener } from '@/components/UrlShortener'
 import { AnalyticsModal } from '@/components/AnalyticsModal'
@@ -43,15 +49,23 @@ function saveFavorites(ids: Set<number>) {
 
 type Tab = 'all' | 'favorites' | 'active'
 
-export default function DashboardPage() {
+function DashboardContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [links, setLinks] = useState<LinkType[]>([])
+  const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [copiedId, setCopiedId] = useState<number | null>(null)
   const [favorites, setFavorites] = useState<Set<number>>(new Set())
   const [search, setSearch] = useState('')
   const [activeTab, setActiveTab] = useState<Tab>('all')
+
+  // Payment Feedback Banner state
+  const [paymentBanner, setPaymentBanner] = useState<{
+    type: 'success' | 'cancelled'
+    message: string
+  } | null>(null)
 
   // Modals
   const [analyticsLinkId, setAnalyticsLinkId] = useState<number | null>(null)
@@ -63,7 +77,39 @@ export default function DashboardPage() {
     setFavorites(loadFavorites())
   }, [])
 
-  const fetchLinks = useCallback(async () => {
+  // Check for Payment Callback
+  useEffect(() => {
+    const paymentStatus = searchParams.get('payment')
+    const sessionId = searchParams.get('session_id')
+
+    if (paymentStatus === 'success' && sessionId) {
+      const token = localStorage.getItem('token')
+      if (token) {
+        verifyPaymentSession(token, sessionId)
+          .then((res) => {
+            setPaymentBanner({
+              type: 'success',
+              message: `🎉 Success! Your account is now upgraded to ${res.plan.toUpperCase()}.`,
+            })
+            // Refresh user profile
+            getUserProfile(token).then(setUser).catch(() => {})
+          })
+          .catch(() => {
+            setPaymentBanner({
+              type: 'success',
+              message: '🎉 Payment completed! Your Pro features are now unlocked.',
+            })
+          })
+      }
+    } else if (paymentStatus === 'cancelled') {
+      setPaymentBanner({
+        type: 'cancelled',
+        message: 'Stripe checkout was cancelled. You are still on the Free plan.',
+      })
+    }
+  }, [searchParams])
+
+  const fetchUserDataAndLinks = useCallback(async () => {
     const token = localStorage.getItem('token')
     if (!token) {
       router.push('/login')
@@ -72,10 +118,14 @@ export default function DashboardPage() {
     try {
       setError('')
       setLoading(true)
-      const data = await getMyLinks(token)
+      const [linksData, profile] = await Promise.all([
+        getMyLinks(token),
+        getUserProfile(token).catch(() => null),
+      ])
+      if (profile) setUser(profile)
       setLinks(
-        data
-          ? data.sort(
+        linksData
+          ? linksData.sort(
               (a, b) =>
                 new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
             )
@@ -93,8 +143,8 @@ export default function DashboardPage() {
   }, [router])
 
   useEffect(() => {
-    fetchLinks()
-  }, [fetchLinks])
+    fetchUserDataAndLinks()
+  }, [fetchUserDataAndLinks])
 
   const totalClicks = useMemo(
     () => links.reduce((sum, l) => sum + (l.click_count || 0), 0),
@@ -166,16 +216,65 @@ export default function DashboardPage() {
     return counts.length > 1 ? counts.reverse() : [0, totalClicks]
   }, [links, totalClicks])
 
+  const isPro = user?.plan === 'pro' || user?.plan === 'enterprise'
+
   return (
-    <div className="space-y-8">
-      {/* Page Title */}
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-          Dashboard
-        </h1>
+    <div className="space-y-6">
+      {/* Payment Feedback Notification */}
+      {paymentBanner && (
+        <div
+          className={`flex items-center justify-between rounded-2xl p-4 shadow-xs transition-all ${
+            paymentBanner.type === 'success'
+              ? 'border border-emerald-200 bg-emerald-50 text-emerald-900'
+              : 'border border-slate-200 bg-slate-100 text-slate-800'
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            {paymentBanner.type === 'success' ? (
+              <CheckCircle weight="duotone" className="h-5 w-5 text-emerald-600 shrink-0" />
+            ) : (
+              <Sparkle weight="duotone" className="h-5 w-5 text-slate-500 shrink-0" />
+            )}
+            <p className="text-xs font-semibold">{paymentBanner.message}</p>
+          </div>
+          <button
+            onClick={() => setPaymentBanner(null)}
+            className="rounded-lg p-1 text-slate-400 hover:text-slate-700"
+          >
+            <X weight="bold" className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Page Title & Plan status */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+            Dashboard
+          </h1>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Manage your shortened links and monitor click performance.
+          </p>
+        </div>
+
+        {isPro ? (
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 px-3 py-1 text-xs font-bold text-white shadow-xs">
+              <Lightning weight="fill" className="h-3.5 w-3.5" />
+              {user?.plan?.toUpperCase()} PLAN ACTIVE
+            </span>
+            <Link
+              href="/dashboard/analysis"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-white px-3 py-1.5 text-xs font-semibold text-indigo-600 hover:bg-indigo-50 transition-colors shadow-2xs"
+            >
+              <ChartBar weight="duotone" className="h-3.5 w-3.5" />
+              Deep Analytics
+            </Link>
+          </div>
+        ) : null}
       </div>
 
-      {/* ── Stat Cards (matching user.png) ────────────────────────── */}
+      {/* ── Stat Cards ────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-2">
         {/* Total Links Card */}
         <div className="flex items-center justify-between rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs">
@@ -218,7 +317,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ── URL Shortener Card (matching user.png) ───────────────────── */}
+      {/* ── URL Shortener Card ──────────────────────────────────────── */}
       <div>
         <UrlShortener onLinkCreated={handleLinkCreated} />
       </div>
@@ -433,5 +532,19 @@ export default function DashboardPage() {
         onClose={() => setQrLink(null)}
       />
     </div>
+  )
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex h-64 items-center justify-center">
+          <CircleNotch weight="bold" className="h-8 w-8 animate-spin text-indigo-600" />
+        </div>
+      }
+    >
+      <DashboardContent />
+    </Suspense>
   )
 }

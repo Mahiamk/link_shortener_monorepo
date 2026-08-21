@@ -26,6 +26,9 @@ class UserOut(BaseModel):
     created_at: datetime
     is_active: bool = True
     is_superuser: bool = False
+    plan: str = "free"
+    stripe_customer_id: Optional[str] = None
+    stripe_subscription_id: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -143,3 +146,22 @@ class ContactSubmission(BaseModel):
 
     class Config:
         from_attributes = True # Pydantic v2
+
+#------------
+# Payment & Stripe Schemas
+#------------
+class CreateCheckoutRequest(BaseModel):
+    plan: str  # "pro" or "enterprise"
+    billing_cycle: Optional[str] = "monthly"  # "monthly" or "annually"
+
+class CheckoutSessionResponse(BaseModel):
+    checkout_url: str
+    session_id: str
+
+class VerifySessionResponse(BaseModel):
+    status: str
+    plan: str
+    message: str
+
+class BillingPortalResponse(BaseModel):
+    portal_url: str

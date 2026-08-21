@@ -1,17 +1,16 @@
 from datetime import datetime, timedelta
-from sqlalchemy.orm import Session, joinedload, subqueryload
+from sqlalchemy.orm import Session, joinedload
 from .db import models, schemas
 from .core.security import get_password_hash
 from app.core.config import settings
-from typing import List
-from sqlalchemy import func, cast, Date, Interval, desc
-from sqlalchemy.sql import extract
+from typing import List, Optional
+from sqlalchemy import func, desc
 
 import secrets
 
 # --- Helper Functions ---
 
-def convert_db_link_to_schema(db_link: models.Link, click_count: int = None) -> dict:
+def convert_db_link_to_schema(db_link: models.Link, click_count: Optional[int] = None) -> dict:
     """
     Safely converts a Link database object into a dictionary
     that matches the schemas.Link Pydantic model.
@@ -27,7 +26,12 @@ def convert_db_link_to_schema(db_link: models.Link, click_count: int = None) -> 
         expires_in_days = max(delta.days, 0)
 
     # Convert owner to UserOut schema if it exists, otherwise None
-    owner_out = schemas.UserOut.from_orm(db_link.owner) if db_link.owner else None
+    owner_out = None
+    if db_link.owner:
+        try:
+            owner_out = schemas.UserOut.model_validate(db_link.owner)
+        except Exception:
+            owner_out = None
 
     if click_count is not None:
         computed_clicks = click_count
@@ -38,7 +42,6 @@ def convert_db_link_to_schema(db_link: models.Link, click_count: int = None) -> 
         "id": db_link.id,
         "original_url": db_link.original_url,
         "short_code": db_link.short_code,
-        # Safely calculate click count
         "clicks": computed_clicks,
         "created_at": db_link.created_at,
         "owner_id": db_link.owner_id,
@@ -46,7 +49,7 @@ def convert_db_link_to_schema(db_link: models.Link, click_count: int = None) -> 
         "expires_at": db_link.expires_at,
         "is_expired": is_expired,
         "expires_in_days": expires_in_days,
-        "owner": owner_out # Include the owner details
+        "owner": owner_out
     }
 
 def convert_db_links_to_schemas(db_links: List[any]) -> List[dict]:
@@ -54,48 +57,46 @@ def convert_db_links_to_schemas(db_links: List[any]) -> List[dict]:
     results = []
     for item in db_links:
         if isinstance(item, models.Link):
-             results.append(convert_db_link_to_schema(item))
+            results.append(convert_db_link_to_schema(item))
         else:
-             # Expecting Row/Tuple (models.Link, count)
-             try:
+            # Expecting Row/Tuple (models.Link, count)
+            try:
                 results.append(convert_db_link_to_schema(item[0], click_count=item[1]))
-             except (IndexError, TypeError):
-                # Fallback or skip if data format is unexpected
+            except (IndexError, TypeError):
                 continue
     return results
 
-def get_mysql_date_trunc(column, interval):
-    """Returns the correct MySQL function for truncating a date."""
+def get_mysql_date_trunc(column, interval: str):
+    """Returns the correct SQL function for truncating a date."""
     if interval == 'day':
-        return func.date(column) # Standard function for truncating to day
+        return func.date(column)
     elif interval == 'month':
-        # MySQL equivalent of date_trunc('month'): YYYY-MM-01
         return func.date_format(column, '%Y-%m-01')
     elif interval == 'year':
-        # MySQL equivalent of date_trunc('year'): YYYY-01-01
         return func.date_format(column, '%Y-01-01')
-    return func.date(column) # Default to day
+    return func.date(column)
 
 # --- User CRUD (Operations) ---
 
-def get_user_by_email(db: Session, email: str):
+def get_user_by_email(db: Session, email: str) -> Optional[models.User]:
     """Fetches a single user by their email address."""
     return db.query(models.User).filter(models.User.email == email).first()
 
-def create_user(db: Session, user: schemas.UserCreate):
+def create_user(db: Session, user: schemas.UserCreate) -> models.User:
     """Creates a new user in the database."""
     hashed_password = get_password_hash(user.password)
     superuser_list = []
     if isinstance(settings.SUPERUSER_EMAILS, str):
-        # Only split if it's actually a string
         superuser_list = [email.strip() for email in settings.SUPERUSER_EMAILS.split(",")]
+    elif isinstance(settings.SUPERUSER_EMAILS, list):
+        superuser_list = [str(email).strip() for email in settings.SUPERUSER_EMAILS]
 
     is_superuser = user.email in superuser_list
-    
-    
+
     db_user = models.User(
         email=user.email,
         hashed_password=hashed_password,
+        is_active=False,
         is_superuser=is_superuser
     )
     db.add(db_user)
@@ -105,7 +106,7 @@ def create_user(db: Session, user: schemas.UserCreate):
 
 # --- Link CRUD (Operations) ---
 
-def get_link_by_short_code(db: Session, short_code: str):
+def get_link_by_short_code(db: Session, short_code: str) -> Optional[models.Link]:
     """Fetches a link by its unique short code."""
     return (
         db.query(models.Link)
@@ -114,7 +115,7 @@ def get_link_by_short_code(db: Session, short_code: str):
         .first()
     )
 
-def create_db_link(db: Session, original_url: str, user_id: int, tag: str | None = None):
+def create_db_link(db: Session, original_url: str, user_id: Optional[int], tag: Optional[str] = None) -> models.Link:
     """Creates a new short link in the database."""
     short_code = secrets.token_urlsafe(6)
     while get_link_by_short_code(db, short_code):
@@ -130,10 +131,10 @@ def create_db_link(db: Session, original_url: str, user_id: int, tag: str | None
     db.add(db_link)
     db.commit()
     db.refresh(db_link)
-    return db_link # Return the DB object
+    return db_link
 
-def get_links_by_user(db: Session, user_id: int) -> List[models.Link]:
-    """Gets all links for a specific user."""
+def get_links_by_user(db: Session, user_id: int) -> List[any]:
+    """Gets all links for a specific user with click counts."""
     return (
         db.query(models.Link, func.count(models.Click.id).label('click_count'))
         .outerjoin(models.Click, models.Link.id == models.Click.link_id)
@@ -144,7 +145,7 @@ def get_links_by_user(db: Session, user_id: int) -> List[models.Link]:
         .all()
     )
     
-def get_link_by_id_and_owner(db: Session, link_id: int, user_id: int) -> models.Link | None:
+def get_link_by_id_and_owner(db: Session, link_id: int, user_id: int) -> Optional[models.Link]:
     """
     Fetches a single link by its ID, ensuring it belongs to the specified user.
     """
@@ -154,14 +155,17 @@ def get_link_by_id_and_owner(db: Session, link_id: int, user_id: int) -> models.
         .first()
     )
 
-def delete_link(db: Session, link_id: int, user_id: int) -> models.Link | None:
+def delete_link(db: Session, link_id: int, user_id: int) -> bool:
     """
-    Finds a link by its ID and the owner's ID.
-    Returns the link object if found and owned by the user, otherwise None.
-    Uses the corrected function to ensure clicks are loaded if needed later.
+    Deletes a link by its ID, ensuring it belongs to the user.
+    Returns True if deleted, False otherwise.
     """
     link_to_delete = get_link_by_id_and_owner(db, link_id, user_id)
-    return link_to_delete
+    if link_to_delete:
+        db.delete(link_to_delete)
+        db.commit()
+        return True
+    return False
 
 
 # --- Click CRUD (Operations) ---
@@ -169,12 +173,12 @@ def delete_link(db: Session, link_id: int, user_id: int) -> models.Link | None:
 def create_click_log(
     db: Session,
     link_id: int,
-    ip_address: str | None = None,
-    country: str | None = None,
-    referrer: str | None = None,
-    browser: str | None = None,
-    device_type: str | None = None
-):
+    ip_address: Optional[str] = None,
+    country: Optional[str] = None,
+    referrer: Optional[str] = None,
+    browser: Optional[str] = None,
+    device_type: Optional[str] = None
+) -> models.Click:
     """Logs a new click for a specific link with all analytics data."""
     db_log = models.Click(
         link_id=link_id,
@@ -203,7 +207,7 @@ def get_click_count(db: Session) -> int:
 def get_all_users(db: Session, skip: int = 0, limit: int = 100) -> List[models.User]:
     return db.query(models.User).offset(skip).limit(limit).all()
 
-def get_all_links(db: Session, skip: int = 0, limit: int = 100) -> List[models.Link]:
+def get_all_links(db: Session, skip: int = 0, limit: int = 100) -> List[any]:
     """Gets all links (for admin), eager loading relationships."""
     return (
         db.query(models.Link, func.count(models.Click.id).label('click_count'))
@@ -216,19 +220,12 @@ def get_all_links(db: Session, skip: int = 0, limit: int = 100) -> List[models.L
         .all()
     )
     
-def get_user_registration_stats(db: Session, interval: str = 'day'):
+def get_user_registration_stats(db: Session, interval: str = 'day') -> List[dict]:
     """
     Aggregates user registration counts by day, month, or year.
-    'interval' can be 'day', 'month', or 'year'.
     """
-    date_trunc_map = {
-        'day': func.date(models.User.created_at),
-        'month': func.date_trunc('month', models.User.created_at),
-        'year': func.date_trunc('year', models.User.created_at),
-    }
-
-    if interval not in date_trunc_map:
-        interval = 'day' # Default to day if invalid
+    if interval not in ('day', 'month', 'year'):
+        interval = 'day'
 
     date_column = get_mysql_date_trunc(models.User.created_at, interval).label('date')
 
@@ -242,23 +239,16 @@ def get_user_registration_stats(db: Session, interval: str = 'day'):
         .all()
     )
 
-    # Format results as a list of dictionaries
     return [{"date": str(row.date), "count": row.count} for row in results]
   
   
-def get_aggregated_clicks_over_time(db: Session, user_id: int, interval: str = 'day'):
+def get_aggregated_clicks_over_time(db: Session, user_id: int, interval: str = 'day') -> List[dict]:
     """
     Aggregates total clicks per time interval (day, month, year)
     across all links owned by the specified user.
     """
-    date_trunc_map = {
-        'day': func.date(models.Click.created_at),
-        'month': func.date_trunc('month', models.Click.created_at),
-        'year': func.date_trunc('year', models.Click.created_at),
-    }
-
-    if interval not in date_trunc_map:
-        interval = 'day' # Default to day if invalid
+    if interval not in ('day', 'month', 'year'):
+        interval = 'day'
 
     date_column = get_mysql_date_trunc(models.Click.created_at, interval).label('date')
 
@@ -267,41 +257,37 @@ def get_aggregated_clicks_over_time(db: Session, user_id: int, interval: str = '
             date_column,
             func.count(models.Click.id).label('count')
         )
-        .join(models.Link) # Join Click with Link
-        .filter(models.Link.owner_id == user_id) # Filter by the user owning the link
+        .join(models.Link, models.Click.link_id == models.Link.id)
+        .filter(models.Link.owner_id == user_id)
         .group_by(date_column)
-        .order_by(date_column) # Order chronologically
+        .order_by(date_column)
         .all()
     )
 
-    # Format results
     return [{"date": str(row.date), "count": row.count} for row in results]
 
 
-def get_aggregated_breakdown(db: Session, user_id: int, group_by_column: str, limit: int = 10):
+def get_aggregated_breakdown(db: Session, user_id: int, group_by_column: str, limit: int = 10) -> dict:
     """
-    Generic function to aggregate clicks by a specific column (e.g., browser, device_type, country, referrer)
-    across all links owned by the specified user, returning top N results + 'Other'.
+    Aggregates clicks by a specific column across all links owned by the user.
     """
     if group_by_column not in ['browser', 'device_type', 'country', 'referrer']:
         raise ValueError("Invalid column for breakdown")
 
     column_attribute = getattr(models.Click, group_by_column)
 
-    # Query to get counts per category
     results = (
         db.query(
             column_attribute.label('category'),
             func.count(models.Click.id).label('count')
         )
-        .join(models.Link)
+        .join(models.Link, models.Click.link_id == models.Link.id)
         .filter(models.Link.owner_id == user_id)
         .group_by(column_attribute)
-        .order_by(desc('count')) # Order by count descending
+        .order_by(desc('count'))
         .all()
     )
 
-    # Process results: Top N + Other
     top_results = results[:limit]
     other_count = sum(row.count for row in results[limit:])
 
@@ -313,24 +299,23 @@ def get_aggregated_breakdown(db: Session, user_id: int, group_by_column: str, li
 
 # --- Convenience functions using the generic breakdown ---
 
-def get_aggregated_device_breakdown(db: Session, user_id: int):
+def get_aggregated_device_breakdown(db: Session, user_id: int) -> dict:
     return get_aggregated_breakdown(db, user_id, 'device_type', limit=5)
 
-def get_aggregated_browser_breakdown(db: Session, user_id: int):
-     return get_aggregated_breakdown(db, user_id, 'browser', limit=5)
+def get_aggregated_browser_breakdown(db: Session, user_id: int) -> dict:
+    return get_aggregated_breakdown(db, user_id, 'browser', limit=5)
 
-def get_aggregated_referrer_breakdown(db: Session, user_id: int):
+def get_aggregated_referrer_breakdown(db: Session, user_id: int) -> dict:
     return get_aggregated_breakdown(db, user_id, 'referrer', limit=5)
 
-def get_aggregated_country_breakdown(db: Session, user_id: int):
+def get_aggregated_country_breakdown(db: Session, user_id: int) -> dict:
     return get_aggregated_breakdown(db, user_id, 'country', limit=5)
   
-  
-def get_user_by_id(db: Session, user_id: int):
+def get_user_by_id(db: Session, user_id: int) -> Optional[models.User]:
     """Fetches a single user by their ID."""
     return db.query(models.User).filter(models.User.id == user_id).first()
 
-def update_user_active_status(db: Session, user_id: int, is_active: bool) -> models.User | None:
+def update_user_active_status(db: Session, user_id: int, is_active: bool) -> Optional[models.User]:
     """Updates the is_active status of a user by ID."""
     db_user = get_user_by_id(db, user_id)
     if db_user:
@@ -348,60 +333,41 @@ def delete_user_by_id(db: Session, user_id: int) -> bool:
         return True
     return False
   
-# --- NEW ADMIN FUNCTION ---
 def admin_delete_link(db: Session, link_id: int) -> bool:
     """
     Admin action: Deletes a link by its ID, regardless of owner.
     Returns True if deleted, False if not found.
     """
-    # Find the link first
     db_link = db.query(models.Link).filter(models.Link.id == link_id).first()
-    
     if db_link:
-        # If found, delete it
         db.delete(db_link)
         db.commit()
         return True
-    
-    # If not found, return False
     return False
   
 def create_contact_submission(db: Session, submission: schemas.ContactSubmissionCreate) -> models.ContactSubmission:
-    """
-    Creates a new contact form submission in the database.
-    Maps frontend camelCase to backend snake_case.
-    """
-    # Map from the Pydantic schema (camelCase) to the SQLAlchemy model (snake_case)
+    """Creates a new contact form submission in the database."""
     db_submission = models.ContactSubmission(
         first_name=submission.firstName,
         last_name=submission.lastName,
         email=submission.email,
         message=submission.message
     )
-    
     db.add(db_submission)
     db.commit()
     db.refresh(db_submission)
     return db_submission
   
 def get_submissions(db: Session, skip: int = 0, limit: int = 100) -> List[models.ContactSubmission]:
-    """
-    Retrieves all contact submissions, newest first.
-    """
+    """Retrieves all contact submissions, newest first."""
     return db.query(models.ContactSubmission).order_by(models.ContactSubmission.created_at.desc()).offset(skip).limit(limit).all()
 
-
-def get_submission_by_id(db: Session, submission_id: int) -> models.ContactSubmission | None:
-    """
-    Retrieves a single contact submission by its ID.
-    """
+def get_submission_by_id(db: Session, submission_id: int) -> Optional[models.ContactSubmission]:
+    """Retrieves a single contact submission by its ID."""
     return db.query(models.ContactSubmission).filter(models.ContactSubmission.id == submission_id).first()
 
-
-def delete_submission(db: Session, submission_id: int) -> models.ContactSubmission | None:
-    """
-    Deletes a contact submission by its ID.
-    """
+def delete_submission(db: Session, submission_id: int) -> Optional[models.ContactSubmission]:
+    """Deletes a contact submission by its ID."""
     db_submission = get_submission_by_id(db, submission_id)
     if db_submission:
         db.delete(db_submission)

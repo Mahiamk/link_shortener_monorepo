@@ -1,4 +1,3 @@
-from xmlrpc.client import Boolean
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Boolean, Text
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -15,6 +14,11 @@ class User(Base):
     links = relationship("Link", back_populates="owner", cascade="all, delete-orphan")
     is_active = Column(Boolean, default=False)  # 1 for active, 0 for inactive
     is_superuser = Column(Boolean, default=False)  # 1 for admin, 0 for regular user
+    
+    # Subscription & Stripe fields
+    plan = Column(String(50), default="free", nullable=False)  # "free", "pro", "enterprise"
+    stripe_customer_id = Column(String(255), nullable=True)
+    stripe_subscription_id = Column(String(255), nullable=True)
 
 class Click(Base):
     __tablename__ = "clicks"
@@ -39,8 +43,6 @@ class Link(Base):
     owner = relationship("User", back_populates="links")
     # One-to-many relationship: one link can have many clicks
     clicks = relationship("Click", back_populates="link", cascade="all, delete-orphan")
-    # Back relationship
-    owner = relationship("User", back_populates="links")
     expires_at = Column(DateTime, nullable=True)  
     tag = Column(String(100), nullable=True)  
     

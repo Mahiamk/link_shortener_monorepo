@@ -9,7 +9,7 @@ from slowapi.errors import RateLimitExceeded
 
 from app.core.limiter import limiter
 from app.core.config import settings
-from app.endpoints import auth, links, admin, analysis, redirect, contact
+from app.endpoints import auth, links, admin, analysis, redirect, contact, payments
 
 # Configure server logger
 logging.basicConfig(level=logging.INFO)
@@ -112,4 +112,5 @@ app.include_router(auth.router, prefix="/auth", tags=["Authentication"])
 app.include_router(links.router, prefix="/links", tags=["Links"])
 app.include_router(admin.router, prefix="/admin", tags=["Admin"])
 app.include_router(analysis.router, prefix="/analysis", tags=["Analysis"])
+app.include_router(payments.router, prefix="/payments", tags=["Payments"])
 app.include_router(redirect.router)

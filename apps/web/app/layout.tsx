@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Lexend } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 const lexend = Lexend({
@@ -25,8 +26,8 @@ export default function RootLayout({
     <html lang="en" className={lexend.variable}>
       <body className={`${lexend.className} font-sans antialiased bg-[#f8fafc] text-slate-900 selection:bg-indigo-500 selection:text-white`}>
         {children}
+        <Analytics />
       </body>
     </html>
   );
 }
-
